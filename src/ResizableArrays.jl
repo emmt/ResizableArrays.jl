@@ -16,6 +16,8 @@ export
 using Base: tail, OneTo, throw_boundserror
 
 """
+## Create unitialized resizable array
+
 ```julia
 ResizableArray{T}(undef, dims)
 ```
@@ -47,6 +49,33 @@ changed.
 
 Resizable arrays are designed to re-use workspace arrays if possible to avoid
 calling the garbage collector.  This may be useful for
+
+
+## Convert to resizable arrays
+
+The [`convert`](@ref) and `ResizableArray` methods can be used to convert an
+array `A` to a resizable array:
+
+```julia
+convert(ResizableArray, A)
+ResizableArray(A)
+```
+
+Element type `T` and number of dimensions `N` may be specified:
+
+```julia
+convert(ResizableArray{T}, A)
+ResizableArray{T}(A)
+convert(ResizableArray{T,N}, A)
+ResizableArray{T,N}(A)
+```
+
+`N` must match `ndims(A)` but `T` may be different from `eltype(A)`.
+
+When using the [`convert`](@ref) or the `ResizableArray` methods to convert an
+array into a resizable array, the buffer for backing storage is always an
+instance of `Vector{T}`.
+
 
 ## Custom storage
 
@@ -84,8 +113,8 @@ mutable struct ResizableArray{T,N,B} <: DenseArray{T,N}
     dims::NTuple{N,Int}
     vals::B
     # Inner constructor for provided storage buffer.
-    function ResizableArray{T,N,B}(buf::B,
-                                   dims::NTuple{N,Int}) where {T,N,B}
+    function ResizableArray{T,N}(buf::B,
+                                 dims::NTuple{N,Int}) where {T,N,B}
         eltype(B) === T || error("buffer has a different element type")
         IndexStyle(B) === IndexLinear() ||
             error("buffer must have linear indexing style")
@@ -95,8 +124,8 @@ mutable struct ResizableArray{T,N,B} <: DenseArray{T,N}
         return new{T,N,B}(len, dims, buf)
     end
     # Inner constructor using regular Julia's vector to store elements.
-    function ResizableArray{T,N,Vector{T}}(::UndefInitializer,
-                                           dims::NTuple{N,Int}) where {T,N}
+    function ResizableArray{T,N}(::UndefInitializer,
+                                 dims::NTuple{N,Int}) where {T,N}
         checkdimensions(dims)
         len = prod(dims)
         buf = Vector{T}(undef, len)
@@ -110,25 +139,43 @@ ResizableArray(arg, dims::Integer...) =
 ResizableArray(arg, dims::Tuple{Vararg{Integer}}) =
     ResizableArray(arg, map(Int, dims))
 ResizableArray(buf::B, dims::NTuple{N,Int}) where {N,B} =
-    ResizableArray{eltype(B),N,B}(buf, dims)
+    ResizableArray{eltype(B),N}(buf, dims)
 
 ResizableArray{T}(arg, dims::Integer...) where {T} =
     ResizableArray{T}(arg, dims)
 ResizableArray{T}(arg, dims::Tuple{Vararg{Integer}}) where {T} =
     ResizableArray{T}(arg, map(Int, dims))
-ResizableArray{T}(::UndefInitializer, dims::NTuple{N,Int}) where {T,N} =
-    ResizableArray{T,N,Vector{T}}(undef, dims)
-ResizableArray{T}(buf::B, dims::NTuple{N,Int}) where {T,N,B} =
-    ResizableArray{T,N,B}(buf, dims)
+ResizableArray{T}(arg, dims::NTuple{N,Int}) where {T,N} =
+    ResizableArray{T,N}(arg, dims)
 
 ResizableArray{T,N}(arg, dims::Integer...) where {T,N} =
-    ResizableArray{T,N}(arg, map(Int, dims))
+    ResizableArray{T,N}(arg, dims)
 ResizableArray{T,N}(arg, dims::Tuple{Vararg{Integer}}) where {T,N} =
     ResizableArray{T,N}(arg, map(Int, dims))
-ResizableArray{T,N}(buf::B, dims::NTuple{N,Int}) where {T,N,B} =
-    ResizableArray{T,N,B}(buf, dims)
 ResizableArray{T,N}(arg, dims::Tuple{Vararg{Int}}) where {T,N} =
     error("mismatching number of dimensions")
+
+ResizableArray{T,N,Vector{T}}(A::AbstractArray{<:Any,N}) where {T,N} =
+    copyto!(ResizableArray{T,N}(undef, size(A)), A)
+ResizableArray{T,N}(A::AbstractArray{<:Any,N}) where {T,N} =
+    copyto!(ResizableArray{T,N}(undef, size(A)), A)
+ResizableArray{T}(A::AbstractArray) where {T} =
+    copyto!(ResizableArray{T}(undef, size(A)), A)
+ResizableArray(A::AbstractArray{T}) where {T} =
+    copyto!(ResizableArray{T}(undef, size(A)), A)
+
+Base.convert(::Type{ResizableArray{T,N}}, A::ResizableArray{T,N}) where {T,N} = A
+Base.convert(::Type{ResizableArray{T}}, A::ResizableArray{T}) where {T} = A
+Base.convert(::Type{ResizableArray}, A::ResizableArray) = A
+
+Base.convert(::Type{ResizableArray{T,N,Vector{T}}}, A::AbstractArray{<:Any,N}) where {T,N} =
+    ResizableArray{T,N}(A)
+Base.convert(::Type{ResizableArray{T,N}}, A::AbstractArray{<:Any,N}) where {T,N} =
+    ResizableArray{T,N}(A)
+Base.convert(::Type{ResizableArray{T}}, A::AbstractArray) where {T} =
+    ResizableArray{T}(A)
+Base.convert(::Type{ResizableArray}, A::AbstractArray{T}) where {T} =
+    ResizableArray(A)
 
 """
 ```julia
