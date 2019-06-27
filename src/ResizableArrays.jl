@@ -130,7 +130,26 @@ ResizableArray{T,N}(buf::B, dims::NTuple{N,Int}) where {T,N,B} =
 ResizableArray{T,N}(arg, dims::Tuple{Vararg{Int}}) where {T,N} =
     error("mismatching number of dimensions")
 
+"""
+```julia
+ResizableVector{T}
+```
+
+Supertype for one-dimensional resizable arrays with elements of type `T`.
+Alias for [`ResizableArray{T,1}`](@ref).
+
+"""
 const ResizableVector{T,B} = ResizableArray{T,1,B}
+
+"""
+```julia
+ResizableMatrix{T}
+```
+
+Supertype for two-dimensional resizable arrays with elements of type `T`.
+Alias for [`ResizableArray{T,2}`](@ref).
+
+"""
 const ResizableMatrix{T,B} = ResizableArray{T,2,B}
 
 """
@@ -193,8 +212,8 @@ See also: [`ResizableArray`](@ref).
 """
 maxlength(A::ResizableArray) = length(A.vals)
 
-Base.eltype(A::ResizableArray{T}) where {T} = T
-Base.ndims(A::ResizableArray{T,N}) where {T,N} = N
+Base.eltype(::Type{<:ResizableArray{T}}) where {T} = T
+Base.ndims(::ResizableArray{T,N}) where {T,N} = N
 Base.length(A::ResizableArray) = A.len
 Base.size(A::ResizableArray) = A.dims
 Base.size(A::ResizableArray{T,N}, d::Integer) where {T,N} =
