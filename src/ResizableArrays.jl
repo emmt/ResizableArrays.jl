@@ -271,6 +271,67 @@ Base.axes(A::ResizableArray, d::Integer) = Base.OneTo(size(A, d))
 @inline Base.axes1(A::ResizableArray) = OneTo(A.dims[1])
 Base.IndexStyle(::Type{<:ResizableArray}) = IndexLinear()
 
+Base.:(==)(::ResizableArray, ::AbstractArray) = false
+
+Base.:(==)(A::ResizableVector{<:Any}, B::ResizableVector{<:Any}) =
+    (length(A) == length(B) && _same_elements(A.vals, B.vals, length(A)))
+
+Base.:(==)(A::ResizableArray{<:Any,N}, B::ResizableArray{<:Any,N}) where {N} =
+    (size(A) == size(B) && _same_elements(A.vals, B.vals, length(A)))
+
+Base.:(==)(A::ResizableVector{<:Any}, B::Vector{<:Any}) =
+    (length(A) == length(B) && _same_elements(A.vals, B, length(A)))
+Base.:(==)(A::Vector{<:Any}, B::ResizableVector{<:Any}) =
+    (length(A) == length(B) && _same_elements(A, B.vals, length(A)))
+
+Base.:(==)(A::ResizableArray{<:Any,N}, B::Array{<:Any,N}) where {N} =
+    (size(A) == size(B) && _same_elements(A.vals, B, length(A)))
+Base.:(==)(A::Array{<:Any,N}, B::ResizableArray{<:Any,N}) where {N} =
+    (size(A) == size(B) && _same_elements(A, B.vals, length(A)))
+
+Base.:(==)(A::ResizableArray{<:Any,N}, B::AbstractArray{<:Any,N}) where {N} =
+    (axes(A) == axes(B) && _same_elements(A.vals, B, length(A)))
+Base.:(==)(A::AbstractArray{<:Any,N}, B::ResizableArray{<:Any,N}) where {N} =
+    (axes(A) == axes(B) && _same_elements(A, B.vals, length(A)))
+
+# Yields whether the `n` first elements of `A` and `B` are identical.
+_same_elements(A, B, n::Integer) = _same_elements(IndexStyle(A), A, IndexStyle(B), B, n)
+
+function _same_elements(::IndexLinear, A, ::IndexLinear, B, n::Integer)
+    @inbounds for i in 1:n
+        A[i] == B[i] || return false
+    end
+    return true
+end
+
+function _same_elements(::IndexLinear, A, ::IndexStyle, B, n::Integer)
+    i = 0
+    @inbounds for j in eachindex(B)
+        (i += 1) ≤ n || break
+        A[i] == B[j] || return false
+    end
+    return (i > n)
+end
+
+function _same_elements(::IndexStyle, A, ::IndexLinear, B, n::Integer)
+    j = 0
+    @inbounds for i in eachindex(A)
+        (j += 1) ≤ n || break
+        A[i] == B[j] || return false
+    end
+    return (j > n)
+end
+
+function _same_elements(::IndexStyle, A, ::IndexStyle, B, n::Integer)
+    # this case should never occur
+    j = 0
+    @inbounds for i in eachindex(A,B)
+        (j += 1) ≤ n || break
+        A[i] == B[i] || return false
+    end
+    return (j > n)
+end
+
 Base.resize!(A::ResizableArray, dims::Integer...) = resize!(A, dims)
 Base.resize!(A::ResizableArray{T,N}, dims::NTuple{N,Integer}) where {T,N} =
     resize!(A, map(Int, dims))
