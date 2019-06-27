@@ -220,6 +220,8 @@ Base.size(A::ResizableArray{T,N}, d::Integer) where {T,N} =
     (d > N ? 1 : d ≥ 1 ? A.dims[d] : error("out of range dimension"))
 Base.axes(A::ResizableArray) = map(OneTo, A.dims)
 Base.axes(A::ResizableArray, d::Integer) = Base.OneTo(size(A, d))
+@inline Base.axes1(A::ResizableArray{<:Any,0}) = OneTo(1)
+@inline Base.axes1(A::ResizableArray) = OneTo(A.dims[1])
 Base.IndexStyle(::Type{<:ResizableArray}) = IndexLinear()
 
 Base.resize!(A::ResizableArray, dims::Integer...) = resize!(A, dims)
