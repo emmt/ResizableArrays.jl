@@ -40,18 +40,18 @@ using ResizableArrays: checkdimension, checkdimensions
         @test all(i -> A[i] == B[i], 1:length(A))
         @test all(i -> A[i] == B[i], CartesianIndices(A))
         @test all(i -> A[i] == B.vals[i], 1:length(A))
+        @test A == B
         for i in eachindex(B)
             B[i] = rand()
         end
         copyto!(A, B)
-        @test all(i -> A[i] == B[i], 1:length(A))
-        @test all(i -> A[i] == B[i], CartesianIndices(A))
-        @test all(i -> A[i] == B.vals[i], 1:length(A))
+        @test A == B
         if N > 0
             tmpdims = collect(size(B))
             tmpdims[end] += 1
             resize!(B, tmpdims...)
             @test maxlength(B) == length(B) == prod(tmpdims)
+            @test A != B
             @test all(i -> B[i] == A[i], 1:length(A))
         end
         @test_throws BoundsError B[0]
@@ -59,94 +59,26 @@ using ResizableArrays: checkdimension, checkdimensions
         @test_throws ErrorException resize!(B, (dims..., 5))
 
         # Use a custom buffer.
-        C = ResizableArray(Vector{T}(undef, length(A)), size(A))
-        @test eltype(C) == eltype(A)
-        @test ndims(C) == ndims(A) == N
-        @test size(C) == size(A)
-        @test all(d -> size(C,d) == size(A,d), 1:(N+2))
-        @test axes(C) == axes(A)
-        @test length(C) == length(A) == prod(dims)
-        @test maxlength(C) == length(C)
-        @test all(d -> axes(C,d) == axes(A,d), 1:(N+2))
-        D = ResizableArray{T,N}(Vector{T}(undef, length(A)), size(A)...)
-        @test eltype(D) == eltype(A)
-        @test ndims(D) == ndims(A) == N
-        @test size(D) == size(A)
-        @test all(d -> size(D,d) == size(A,d), 1:(N+2))
-        @test axes(D) == axes(A)
-        @test length(D) == length(A) == prod(dims)
-        @test maxlength(D) == length(D)
-        @test all(d -> axes(D,d) == axes(A,d), 1:(N+2))
+        C = copyto!(ResizableArray(Vector{T}(undef, length(A)), size(A)), A)
+        @test eltype(C) == eltype(A) && C == A
+        D = copyto!(ResizableArray{T,N}(Vector{T}(undef, length(A)), size(A)...), A)
+        @test eltype(D) == eltype(A) && D == A
 
         # Use constructor to convert array.
         E = ResizableArray(A)
-        @test eltype(E) == eltype(A)
-        @test ndims(E) == ndims(A) == N
-        @test size(E) == size(A)
-        @test all(d -> size(E,d) == size(A,d), 1:(N+2))
-        @test axes(E) == axes(A)
-        @test length(E) == length(A) == prod(dims)
-        @test maxlength(E) == length(E)
-        @test all(d -> axes(E,d) == axes(A,d), 1:(N+2))
-        @test all(i -> A[i] == E[i], 1:length(A))
-        @test all(i -> A[i] == E[i], CartesianIndices(A))
+        @test eltype(E) == eltype(A) && E == A
         F = ResizableArray{T}(A)
-        @test eltype(F) == eltype(A)
-        @test ndims(F) == ndims(A) == N
-        @test size(F) == size(A)
-        @test all(d -> size(F,d) == size(A,d), 1:(N+2))
-        @test axes(F) == axes(A)
-        @test length(F) == length(A) == prod(dims)
-        @test maxlength(F) == length(F)
-        @test all(d -> axes(F,d) == axes(A,d), 1:(N+2))
-        @test all(i -> A[i] == F[i], 1:length(A))
-        @test all(i -> A[i] == F[i], CartesianIndices(A))
+        @test eltype(F) == eltype(A) && F == A
         G = ResizableArray{T,N}(A)
-        @test eltype(G) == eltype(A)
-        @test ndims(G) == ndims(A) == N
-        @test size(G) == size(A)
-        @test all(d -> size(G,d) == size(A,d), 1:(N+2))
-        @test axes(G) == axes(A)
-        @test length(G) == length(A) == prod(dims)
-        @test maxlength(G) == length(G)
-        @test all(d -> axes(G,d) == axes(A,d), 1:(N+2))
-        @test all(i -> A[i] == G[i], 1:length(A))
-        @test all(i -> A[i] == G[i], CartesianIndices(A))
+        @test eltype(G) == eltype(A) && G == A
 
         # Use convert to convert array.
         E = convert(ResizableArray, A)
-        @test eltype(E) == eltype(A)
-        @test ndims(E) == ndims(A) == N
-        @test size(E) == size(A)
-        @test all(d -> size(E,d) == size(A,d), 1:(N+2))
-        @test axes(E) == axes(A)
-        @test length(E) == length(A) == prod(dims)
-        @test maxlength(E) == length(E)
-        @test all(d -> axes(E,d) == axes(A,d), 1:(N+2))
-        @test all(i -> A[i] == E[i], 1:length(A))
-        @test all(i -> A[i] == E[i], CartesianIndices(A))
+        @test eltype(E) == eltype(A) && E == A
         F =convert(ResizableArray{T}, A)
-        @test eltype(F) == eltype(A)
-        @test ndims(F) == ndims(A) == N
-        @test size(F) == size(A)
-        @test all(d -> size(F,d) == size(A,d), 1:(N+2))
-        @test axes(F) == axes(A)
-        @test length(F) == length(A) == prod(dims)
-        @test maxlength(F) == length(F)
-        @test all(d -> axes(F,d) == axes(A,d), 1:(N+2))
-        @test all(i -> A[i] == F[i], 1:length(A))
-        @test all(i -> A[i] == F[i], CartesianIndices(A))
+        @test eltype(F) == eltype(A) && F == A
         G = convert(ResizableArray{T,N}, A)
-        @test eltype(G) == eltype(A)
-        @test ndims(G) == ndims(A) == N
-        @test size(G) == size(A)
-        @test all(d -> size(G,d) == size(A,d), 1:(N+2))
-        @test axes(G) == axes(A)
-        @test length(G) == length(A) == prod(dims)
-        @test maxlength(G) == length(G)
-        @test all(d -> axes(G,d) == axes(A,d), 1:(N+2))
-        @test all(i -> A[i] == G[i], 1:length(A))
-        @test all(i -> A[i] == G[i], CartesianIndices(A))
+        @test eltype(G) == eltype(A) && G == A
     end
 end
 
