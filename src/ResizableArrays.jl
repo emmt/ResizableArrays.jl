@@ -45,6 +45,11 @@ Julia vector, the number of element can be augmented.  When such a resizable
 array is resized, its contents is preserved if only the last dimension is
 changed.
 
+Resizable arrays are designed to re-use workspace arrays if possible to avoid
+calling the garbage collector.  This may be useful for
+
+## Custom storage
+
 The default storage of the elements of a resizable array is provided by a
 regular Julia vector.  To use an object `buf` to store the elements of a
 resizable array, use one of the following:
@@ -63,8 +68,15 @@ respectively.  The methods, `IndexStyle`, `eltype`, `length`, `getindex` and
 is applicable for `buf`, the number of elements of `A` can be augmented;
 otherwise the maximum number of elements of `A` is `length(buf)`.
 
-Resizable arrays are designed to re-use workspace arrays if possible to avoid
-calling the garbage collector.  This may be useful for
+!!! warning
+    When explictely providing a resizable buffer `buf` for backing the
+    storage of a resizable array `A`, you have the responsibility to make
+    sure that the same buffer is not resized elsewhere.  Otherwise a
+    segmentation fault may occur because `A` might assume a wrong buffer
+    size.  To avoid this, the best is to make sure that only `A` owns `buf`
+    and only `A` manages its size.  In the current implementation, the size
+    of the internal buffer is never reduced so the same buffer may be
+    safely shared by different resizable arrays.
 
 """
 mutable struct ResizableArray{T,N,B} <: DenseArray{T,N}
