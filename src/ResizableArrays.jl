@@ -293,8 +293,10 @@ Base.:(==)(A::ResizableArray{<:Any,N}, B::AbstractArray{<:Any,N}) where {N} =
 Base.:(==)(A::AbstractArray{<:Any,N}, B::ResizableArray{<:Any,N}) where {N} =
     (axes(A) == axes(B) && _same_elements(A, B.vals, length(A)))
 
-# Yields whether the `n` first elements of `A` and `B` are identical.
-_same_elements(A, B, n::Integer) = _same_elements(IndexStyle(A), A, IndexStyle(B), B, n)
+# Yields whether the `n` first elements of `A` and `B` are identical.  This
+# method is unsafe as it assumes that `A` and `B` have at least `n` elements.
+_same_elements(A, B, n::Integer) =
+    _same_elements(IndexStyle(A), A, IndexStyle(B), B, n)
 
 function _same_elements(::IndexLinear, A, ::IndexLinear, B, n::Integer)
     @inbounds for i in 1:n
@@ -404,5 +406,10 @@ end
     (doff > 0 && doff - 1 + n ≤ dlen &&
      soff > 0 && soff - 1 + n ≤ slen) || throw(BoundsError())
 end
+
+Base.unsafe_convert(::Type{Ptr{T}}, A::ResizableArray{T}) where {T} =
+    Base.unsafe_convert(Ptr{T}, A.vals)
+
+Base.pointer(A::ResizableArray, i::Integer) = pointer(A.vals, i)
 
 end # module
