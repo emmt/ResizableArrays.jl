@@ -241,10 +241,9 @@ isgrowable(x) -> boolean
 yields whether `x` is a growable object, that is its size can be augmented.
 
 """
-isgrowable(x::T) where {T} = isgrowable(T)
-isgrowable(::Type{ResizableArray{T,N,B}}) where {T,N,B} = isgrowable(B)
-isgrowable(::Type{<:Vector}) = true
-isgrowable(::Type) = false
+isgrowable(A::ResizableArray) = isgrowable(A.vals)
+isgrowable(::Vector) = true
+isgrowable(::Any) = false
 
 """
 ```julia
