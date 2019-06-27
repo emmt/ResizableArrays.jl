@@ -12,6 +12,9 @@ using ResizableArrays: checkdimension, checkdimensions
         @test checkdimensions(Bool, (1,2,0)) == true
         @test checkdimensions(Bool, (1,-2,0)) == false
         @test_throws ErrorException checkdimensions((1,-2,0))
+        @test isgrowable(π) == false
+        @test isgrowable((1,2,3)) == false
+        @test isgrowable([1,2,3]) == true
     end
     @testset "Dimensions: $dims" for dims in ((), (3,), (2,3), (2,3,4))
         N = length(dims)
@@ -24,6 +27,7 @@ using ResizableArrays: checkdimension, checkdimensions
             A[1] = rand(dims...)
         end
         B = ResizableArray{T}(undef, size(A))
+        @test IndexStyle(typeof(B)) == IndexLinear()
         @test eltype(B) == eltype(A)
         @test ndims(B) == ndims(A) == N
         @test size(B) == size(A)
@@ -33,7 +37,16 @@ using ResizableArrays: checkdimension, checkdimensions
         @test maxlength(B) == length(B)
         @test all(d -> axes(B,d) == axes(A,d), 1:(N+2))
         copyto!(B, A)
-        @test all(i -> B[i] == A[i], 1:length(A))
+        @test all(i -> A[i] == B[i], 1:length(A))
+        @test all(i -> A[i] == B[i], CartesianIndices(A))
+        @test all(i -> A[i] == B.vals[i], 1:length(A))
+        for i in eachindex(B)
+            B[i] = rand()
+        end
+        copyto!(A, B)
+        @test all(i -> A[i] == B[i], 1:length(A))
+        @test all(i -> A[i] == B[i], CartesianIndices(A))
+        @test all(i -> A[i] == B.vals[i], 1:length(A))
         if N > 0
             tmpdims = collect(size(B))
             tmpdims[end] += 1
@@ -41,6 +54,10 @@ using ResizableArrays: checkdimension, checkdimensions
             @test maxlength(B) == length(B) == prod(tmpdims)
             @test all(i -> B[i] == A[i], 1:length(A))
         end
+        @test_throws BoundsError B[0]
+        @test_throws BoundsError B[length(B) + 1]
+        @test_throws ErrorException resize!(B, (dims..., 5))
+
         # Use a custom buffer.
         C = ResizableArray(Vector{T}(undef, length(A)), size(A))
         @test eltype(C) == eltype(A)
@@ -51,7 +68,7 @@ using ResizableArrays: checkdimension, checkdimensions
         @test length(C) == length(A) == prod(dims)
         @test maxlength(C) == length(C)
         @test all(d -> axes(C,d) == axes(A,d), 1:(N+2))
-        D = ResizableArray{T,N}(Vector{T}(undef, length(A)), size(A))
+        D = ResizableArray{T,N}(Vector{T}(undef, length(A)), size(A)...)
         @test eltype(D) == eltype(A)
         @test ndims(D) == ndims(A) == N
         @test size(D) == size(A)
