@@ -53,32 +53,50 @@ using ResizableArrays: checkdimension, checkdimensions
             @test maxlength(B) == length(B) == prod(tmpdims)
             @test A != B
             @test all(i -> B[i] == A[i], 1:length(A))
+            dims16b = map(Int16, size(A))
         end
         @test_throws BoundsError B[0]
         @test_throws BoundsError B[length(B) + 1]
         @test_throws ErrorException resize!(B, (dims..., 5))
 
-        # Use a custom buffer.
-        C = copyto!(ResizableArray(Vector{T}(undef, length(A)), size(A)), A)
-        @test eltype(C) == eltype(A) && C == A
-        D = copyto!(ResizableArray{T,N}(Vector{T}(undef, length(A)), size(A)...), A)
-        @test eltype(D) == eltype(A) && D == A
+        # Check various constructors and custom buffer (do not splat dimensions if N=0).
+        buf = Vector{T}(undef, length(A))
+        for arg in (undef, buf)
+            C = copyto!(ResizableArray{T}(arg, dims), A)
+            @test eltype(C) == eltype(A) && C == A
+            C = copyto!(ResizableArray{T,N}(arg, dims), A)
+            @test eltype(C) == eltype(A) && C == A
+            if N > 0
+                C = copyto!(ResizableArray{T}(arg, dims...), A)
+                @test eltype(C) == eltype(A) && C == A
+                C = copyto!(ResizableArray{T,N}(arg, dims...), A)
+                @test eltype(C) == eltype(A) && C == A
+                C = copyto!(ResizableArray{T}(arg, dims16b), A)
+                @test eltype(C) == eltype(A) && C == A
+                C = copyto!(ResizableArray{T}(arg, dims16b...), A)
+                @test eltype(C) == eltype(A) && C == A
+                C = copyto!(ResizableArray{T,N}(arg, dims16b), A)
+                @test eltype(C) == eltype(A) && C == A
+                C = copyto!(ResizableArray{T,N}(arg, dims16b...), A)
+                @test eltype(C) == eltype(A) && C == A
+            end
+        end
 
         # Use constructor to convert array.
-        E = ResizableArray(A)
-        @test eltype(E) == eltype(A) && E == A
-        F = ResizableArray{T}(A)
-        @test eltype(F) == eltype(A) && F == A
-        G = ResizableArray{T,N}(A)
-        @test eltype(G) == eltype(A) && G == A
+        C = ResizableArray(A)
+        @test eltype(C) == eltype(A) && C == A
+        C = ResizableArray{T}(A)
+        @test eltype(C) == eltype(A) && C == A
+        C = ResizableArray{T,N}(A)
+        @test eltype(C) == eltype(A) && C == A
 
         # Use convert to convert array.
-        E = convert(ResizableArray, A)
-        @test eltype(E) == eltype(A) && E == A
-        F =convert(ResizableArray{T}, A)
-        @test eltype(F) == eltype(A) && F == A
-        G = convert(ResizableArray{T,N}, A)
-        @test eltype(G) == eltype(A) && G == A
+        C = convert(ResizableArray, A)
+        @test eltype(C) == eltype(A) && C == A
+        C = convert(ResizableArray{T}, A)
+        @test eltype(C) == eltype(A) && C == A
+        C = convert(ResizableArray{T,N}, A)
+        @test eltype(C) == eltype(A) && C == A
     end
 end
 
