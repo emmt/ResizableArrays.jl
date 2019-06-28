@@ -27,12 +27,14 @@ using ResizableArrays: checkdimension, checkdimensions
             A[1] = rand(dims...)
         end
         B = ResizableArray{T}(undef, size(A))
+        @test isgrowable(B) == (N > 0)
         @test IndexStyle(typeof(B)) == IndexLinear()
         @test eltype(B) == eltype(A)
         @test ndims(B) == ndims(A) == N
         @test size(B) == size(A)
         @test all(d -> size(B,d) == size(A,d), 1:(N+2))
         @test axes(B) == axes(A)
+        @test Base.axes1(B) == axes(B,1)
         @test length(B) == length(A) == prod(dims)
         @test maxlength(B) == length(B)
         @test all(d -> axes(B,d) == axes(A,d), 1:(N+2))
@@ -48,15 +50,23 @@ using ResizableArrays: checkdimension, checkdimensions
         @test A == B
         if N > 0
             dims16b = map(Int16, size(A)) # used later
+            # Extend array B.
             tmpdims = collect(size(B))
             tmpdims[end] += 1
             resize!(B, tmpdims...)
+            for i in length(A)+1:length(B); B[i] = 0; end
             @test maxlength(B) == length(B) == prod(tmpdims)
             @test A != B
+            @test B != A
             @test all(i -> B[i] == A[i], 1:length(A))
+            C = view(B, axes(A)...)
+            @test C != B && B != C
+            @test C == A && A == C
+            # Shrink array B.
             oldmaxlen = maxlength(B)
             resize!(B, dims)
             @test B == A
+            @test C == B && B == C
             @test maxlength(B) == oldmaxlen
             C = copy(ResizableArray, B)
             @test C == B

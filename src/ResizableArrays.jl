@@ -246,6 +246,7 @@ yields whether `x` is a growable object, that is its size can be augmented.
 
 """
 isgrowable(A::ResizableArray) = isgrowable(A.vals)
+isgrowable(A::ResizableArray{T,0}) where {T} = false
 isgrowable(::Vector) = true
 isgrowable(::Any) = false
 
@@ -313,29 +314,29 @@ end
 function _same_elements(::IndexLinear, A, ::IndexStyle, B, n::Integer)
     i = 0
     @inbounds for j in eachindex(B)
-        (i += 1) ≤ n || break
+        (i += 1) ≤ n || return true
         A[i] == B[j] || return false
     end
-    return (i > n)
+    return (i ≥ n)
 end
 
 function _same_elements(::IndexStyle, A, ::IndexLinear, B, n::Integer)
     j = 0
     @inbounds for i in eachindex(A)
-        (j += 1) ≤ n || break
+        (j += 1) ≤ n || return true
         A[i] == B[j] || return false
     end
-    return (j > n)
+    return (j ≥ n)
 end
 
 function _same_elements(::IndexStyle, A, ::IndexStyle, B, n::Integer)
     # this case should never occur
     j = 0
     @inbounds for i in eachindex(A,B)
-        (j += 1) ≤ n || break
+        (j += 1) ≤ n || return true
         A[i] == B[i] || return false
     end
-    return (j > n)
+    return (j ≥ n)
 end
 
 Base.resize!(A::ResizableArray, dims::Integer...) = resize!(A, dims)
