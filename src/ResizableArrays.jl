@@ -172,8 +172,6 @@ Base.convert(::Type{ResizableArray{T,N}}, A::ResizableArray{T,N}) where {T,N} = 
 Base.convert(::Type{ResizableArray{T}}, A::ResizableArray{T}) where {T} = A
 Base.convert(::Type{ResizableArray}, A::ResizableArray) = A
 
-Base.convert(::Type{ResizableArray{T,N,Vector{T}}}, A::AbstractArray{<:Any,N}) where {T,N} =
-    ResizableArray{T,N}(A)
 Base.convert(::Type{ResizableArray{T,N}}, A::AbstractArray{<:Any,N}) where {T,N} =
     ResizableArray{T,N}(A)
 Base.convert(::Type{ResizableArray{T}}, A::AbstractArray) where {T} =
