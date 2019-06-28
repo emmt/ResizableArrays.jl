@@ -11,7 +11,8 @@ export
     ResizableMatrix,
     ResizableVector,
     isgrowable,
-    maxlength
+    maxlength,
+    shrink!
 
 using Base: tail, OneTo, throw_boundserror
 
@@ -48,7 +49,10 @@ array is resized, its contents is preserved if only the last dimension is
 changed.
 
 Resizable arrays are designed to re-use workspace arrays if possible to avoid
-calling the garbage collector.  This may be useful for
+calling the garbage collector.  This may be useful for real-time applications.
+As a consequence, the storage used by a resizable array `A` can only grow unless
+`skrink!(A)` is called to reduce the storage to the minimum.  The call
+`copy(ResizableArray,A)` yields a copy of `A` which is a resizable array.
 
 
 ## Convert to resizable arrays
@@ -271,6 +275,7 @@ Base.axes(A::ResizableArray, d::Integer) = Base.OneTo(size(A, d))
 Base.IndexStyle(::Type{<:ResizableArray}) = IndexLinear()
 
 Base.:(==)(::ResizableArray, ::AbstractArray) = false
+Base.:(==)(::AbstractArray, ::ResizableArray) = false
 
 Base.:(==)(A::ResizableVector{<:Any}, B::ResizableVector{<:Any}) =
     (length(A) == length(B) && _same_elements(A.vals, B.vals, length(A)))
@@ -348,6 +353,29 @@ function Base.resize!(A::ResizableArray{T,N}, dims::NTuple{N,Int}) where {T,N}
 end
 Base.resize!(A::ResizableArray, dims::Tuple{Vararg{Int}}) =
     error("changing the number of dimensions is not allowed")
+
+"""
+```julia
+shrink!(A) -> A
+```
+
+shrinks as much as possible the storage of resizable array `A` and returns `A`.
+Call `copy(ResizableArray,A)` to make a copy of `A` which is a resizable array
+with skrinked storage.
+"""
+function shrink!(A::ResizableArray)
+    length(A) < length(A.vals) && resize!(A.vals, length(A))
+    return A
+end
+
+Base.copy(::Type{ResizableArray}, A::AbstractArray{T,N}) where {T,N} =
+    copyto!(ResizableArray{T,N}(undef, size(A)), A)
+
+Base.copy(::Type{ResizableArray{T}}, A::AbstractArray{T,N}) where {T,N} =
+    copyto!(ResizableArray{T,N}(undef, size(A)), A)
+
+Base.copy(::Type{ResizableArray{T,N}}, A::AbstractArray{T,N}) where {T,N} =
+    copyto!(ResizableArray{T,N}(undef, size(A)), A)
 
 @inline Base.getindex(A::ResizableArray, i::Int) =
     (@boundscheck checkbounds(A, i);

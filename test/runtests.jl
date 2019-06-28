@@ -47,13 +47,29 @@ using ResizableArrays: checkdimension, checkdimensions
         copyto!(A, B)
         @test A == B
         if N > 0
+            dims16b = map(Int16, size(A)) # used later
             tmpdims = collect(size(B))
             tmpdims[end] += 1
             resize!(B, tmpdims...)
             @test maxlength(B) == length(B) == prod(tmpdims)
             @test A != B
             @test all(i -> B[i] == A[i], 1:length(A))
-            dims16b = map(Int16, size(A))
+            oldmaxlen = maxlength(B)
+            resize!(B, dims)
+            @test B == A
+            @test maxlength(B) == oldmaxlen
+            C = copy(ResizableArray, B)
+            @test C == B
+            @test maxlength(C) == length(C)
+            C = copy(ResizableArray{T}, B)
+            @test C == B
+            @test maxlength(C) == length(C)
+            C = copy(ResizableArray{T,N}, B)
+            @test C == B
+            @test maxlength(C) == length(C)
+            shrink!(B)
+            @test B == A
+            @test maxlength(B) == length(B)
         end
         @test_throws BoundsError B[0]
         @test_throws BoundsError B[length(B) + 1]
