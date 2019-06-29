@@ -354,6 +354,7 @@ Base.resize!(A::ResizableArray, dims::Tuple{Vararg{Int}}) =
     error("changing the number of dimensions is not allowed")
 
 """
+
 ```julia
 shrink!(A) -> A
 ```
@@ -361,11 +362,68 @@ shrink!(A) -> A
 shrinks as much as possible the storage of resizable array `A` and returns `A`.
 Call `copy(ResizableArray,A)` to make a copy of `A` which is a resizable array
 with skrinked storage.
+
 """
 function shrink!(A::ResizableArray)
     length(A) < length(A.vals) && resize!(A.vals, length(A))
     return A
 end
+
+"""
+
+```julia
+grow!(A, B, prepend=false) -> A
+```
+
+grows resizable array `A` with the elements of `B` and returns `A`.
+If `prepend` is `true`, the elements of `B` are inserted before those of `A`;
+otherwise, the elements of `B` are appended after those of `A`.   By default,
+`prepend` is `false`.
+
+Assuming `A` has `N` dimensions, array `B` may have `N` or `N-1` dimensions.
+The `N-1` first dimensions of `B` must match the leading dimensions of `A`.
+The `N-1` first dimensions of the result are the leading dimensions of `A`.  If
+`B` has the same number of dimensions as `A`, the last dimension of the result
+is the sum of the last dimensions of `A` and `B`; otherwise, the last dimension
+of the result is one plus the last dimension of `A`.
+
+The depending on argument `prepend`, method `grow!` is equivalent to
+[`append!`](@ref) or to [`prepend!`](@ref).
+
+See also [`ResizableArray`](@ref), [`append!`](@ref) and [`prepend!`](@ref).
+
+"""
+function grow!(A::ResizableArray{<:Any,N},
+               B::AbstractArray{<:Any,M}, prepend::Bool=false) where {N,M}
+    N - 1 ≤ M ≤ N || throw(DimensionMismatch("invalid number of dimensions"))
+    indA = axes(A)
+    indB = axes(B)
+    @inbounds for d in 1:N-1
+        indA[d] == indB[d] ||
+            throw(DimensionMismatch("leading dimensions must be identical"))
+    end
+    dimN = length(indA[N]) + (M == N ? length(indB[N]) : 1)
+    lenA = length(A)
+    lenB = length(B)
+    minlen = lenA + lenB
+    buf = A.vals
+    length(buf) ≥ minlen || resize!(buf, minlen)
+    if prepend
+        copyto!(buf, lenB + 1, buf, 1, lenA)
+        copyto!(buf, 1, B, 1, lenB)
+    else
+        copyto!(buf, lenA + 1, B, 1, lenB)
+    end
+    A.len = lenA + lenB
+    A.dims = ntuple(d -> (d < N ? A.dims[d] : dimN), Val(N))
+    return A
+end
+
+Base.append!(dst::ResizableArray, src::AbstractArray) =
+    grow!(dst, src, false)
+
+Base.prepend!(dst::ResizableArray, src::AbstractArray) =
+    grow!(dst, src, true)
 
 Base.copy(::Type{ResizableArray}, A::AbstractArray{T,N}) where {T,N} =
     copyto!(ResizableArray{T,N}(undef, size(A)), A)

@@ -4,6 +4,12 @@ using Test
 using ResizableArrays
 using ResizableArrays: checkdimension, checkdimensions
 
+# FIXME: used @generated
+slice(A::AbstractArray{<:Any,2}, I) = A[:,I]
+slice(A::AbstractArray{<:Any,3}, I) = A[:,:,I]
+slice(A::AbstractArray{<:Any,4}, I) = A[:,:,:,I]
+slice(A::AbstractArray{<:Any,5}, I) = A[:,:,:,:,I]
+
 @testset "Basic methods" begin
     @testset "Utilities" begin
         @test checkdimension(Bool, π) == false
@@ -123,6 +129,25 @@ using ResizableArrays: checkdimension, checkdimensions
         @test eltype(C) == eltype(A) && C == A
         C = convert(ResizableArray{T,N}, A)
         @test eltype(C) == eltype(A) && C == A
+    end
+end
+
+@testset "Queue methods" begin
+    T = Float32
+    @testset "Dimensions: $dims" for dims in ((3,), (2,3), (2,3,4))
+        N = length(dims)
+        m = 3
+        A = rand(T, dims..., m)
+        B = rand(T, dims)
+        C = rand(T, dims)
+        R = ResizableArray(A)
+        append!(R, B)
+        @test slice(R, 1:m) == A
+        @test slice(R, m+1) == B
+        prepend!(R, C)
+        @test slice(R, 1) == C
+        @test slice(R, 2:m+1) == A
+        @test slice(R, m+2) == B
     end
 end
 
