@@ -91,6 +91,11 @@ slice(A::AbstractArray{<:Any,5}, I) = A[:,:,:,:,I]
         @test_throws BoundsError B[length(B) + 1]
         @test_throws ErrorException resize!(B, (dims..., 5))
 
+        # Check equality for a different list of dimensions.
+        C = rand(7)
+        @test B != C
+        @test C != B
+
         # Check various constructors and custom buffer
         # (do not splat dimensions if N=0).
         buf = Vector{T}(undef, length(A))
@@ -115,13 +120,22 @@ slice(A::AbstractArray{<:Any,5}, I) = A[:,:,:,:,I]
             end
         end
 
+        # Check construction with various ways to specify the dimenions.
+        if N == 2
+            dim1, dim2 = Int16(dims[1]), Int32(dims[2])
+            C = copyto!(ResizableArray{T}(undef, dim1, dim2), A)
+            @test eltype(C) == eltype(A) && C == A
+            C = copyto!(ResizableArray{T}(undef, (dim1, dim2)), A)
+            @test eltype(C) == eltype(A) && C == A
+        end
+
         # Use constructor to convert array.
         C = ResizableArray{T,N}()
         resize!(C, dims)
         copyto!(C, A)
         @test eltype(C) == eltype(A) && C == A
 
-        # Use constructor to convert array.
+        # Use constructor to convert ordinary array.
         C = ResizableArray(A)
         @test eltype(C) == eltype(A) && C == A
         C = ResizableArray{T}(A)
@@ -129,13 +143,21 @@ slice(A::AbstractArray{<:Any,5}, I) = A[:,:,:,:,I]
         C = ResizableArray{T,N}(A)
         @test eltype(C) == eltype(A) && C == A
 
-        # Use convert to convert array.
+        # Use convert to convert ordinary array.
         C = convert(ResizableArray, A)
         @test eltype(C) == eltype(A) && C == A
         C = convert(ResizableArray{T}, A)
         @test eltype(C) == eltype(A) && C == A
         C = convert(ResizableArray{T,N}, A)
         @test eltype(C) == eltype(A) && C == A
+
+        # Use convert to convert resizable array.
+        C = convert(ResizableArray, B)
+        @test eltype(C) == eltype(B) && C == B
+        C = convert(ResizableArray{T}, B)
+        @test eltype(C) == eltype(B) && C == B
+        C = convert(ResizableArray{T,N}, B)
+        @test eltype(C) == eltype(B) && C == B
     end
 end
 
