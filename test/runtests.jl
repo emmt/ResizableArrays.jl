@@ -91,7 +91,8 @@ slice(A::AbstractArray{<:Any,5}, I) = A[:,:,:,:,I]
         @test_throws BoundsError B[length(B) + 1]
         @test_throws ErrorException resize!(B, (dims..., 5))
 
-        # Check various constructors and custom buffer (do not splat dimensions if N=0).
+        # Check various constructors and custom buffer
+        # (do not splat dimensions if N=0).
         buf = Vector{T}(undef, length(A))
         for arg in (undef, buf)
             C = copyto!(ResizableArray{T}(arg, dims), A)
@@ -113,6 +114,12 @@ slice(A::AbstractArray{<:Any,5}, I) = A[:,:,:,:,I]
                 @test eltype(C) == eltype(A) && C == A
             end
         end
+
+        # Use constructor to convert array.
+        C = ResizableArray{T,N}()
+        resize!(C, dims)
+        copyto!(C, A)
+        @test eltype(C) == eltype(A) && C == A
 
         # Use constructor to convert array.
         C = ResizableArray(A)

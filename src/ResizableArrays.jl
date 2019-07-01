@@ -14,7 +14,7 @@ export
     maxlength,
     shrink!
 
-using Base: tail, OneTo, throw_boundserror
+using Base: tail, OneTo, throw_boundserror, @propagate_inbounds
 
 """
 ## Create unitialized resizable array
@@ -47,6 +47,12 @@ number of elements of the array.  When array elements are stored in a regular
 Julia vector, the number of element can be augmented.  When such a resizable
 array is resized, its contents is preserved if only the last dimension is
 changed.
+
+To create an empty resizable array of given rank and element type:
+
+```julia
+ResizableArray{T,N}()
+```
 
 Resizable arrays are designed to re-use workspace arrays if possible to avoid
 calling the garbage collector.  This may be useful for real-time applications.
@@ -159,14 +165,16 @@ ResizableArray{T,N}(arg, dims::Tuple{Vararg{Integer}}) where {T,N} =
 ResizableArray{T,N}(arg, dims::Tuple{Vararg{Int}}) where {T,N} =
     error("mismatching number of dimensions")
 
-ResizableArray{T,N,Vector{T}}(A::AbstractArray{<:Any,N}) where {T,N} =
-    copyto!(ResizableArray{T,N}(undef, size(A)), A)
 ResizableArray{T,N}(A::AbstractArray{<:Any,N}) where {T,N} =
     copyto!(ResizableArray{T,N}(undef, size(A)), A)
 ResizableArray{T}(A::AbstractArray) where {T} =
     copyto!(ResizableArray{T}(undef, size(A)), A)
 ResizableArray(A::AbstractArray{T}) where {T} =
     copyto!(ResizableArray{T}(undef, size(A)), A)
+
+# Constructor for workspace of given rank and element type.
+ResizableArray{T,N}() where {T,N} =
+    ResizableArray{T,N}(undef, ntuple(i -> 0, Val(N)))
 
 Base.convert(::Type{ResizableArray{T,N}}, A::ResizableArray{T,N}) where {T,N} = A
 Base.convert(::Type{ResizableArray{T}}, A::ResizableArray{T}) where {T} = A
@@ -338,8 +346,11 @@ function _same_elements(::IndexStyle, A, ::IndexStyle, B, n::Integer)
 end
 
 Base.resize!(A::ResizableArray, dims::Integer...) = resize!(A, dims)
-Base.resize!(A::ResizableArray{T,N}, dims::NTuple{N,Integer}) where {T,N} =
-    resize!(A, map(Int, dims))
+function Base.resize!(A::ResizableArray, dims::Tuple{Vararg{Integer}})
+    length(dims) == ndims(A) ||
+        error("changing the number of dimensions is not allowed")
+    return resize!(A, map(Int, dims))
+end
 function Base.resize!(A::ResizableArray{T,N}, dims::NTuple{N,Int}) where {T,N}
     if dims != size(A)
         checkdimensions(dims)
@@ -350,8 +361,6 @@ function Base.resize!(A::ResizableArray{T,N}, dims::NTuple{N,Int}) where {T,N}
     end
     return A
 end
-Base.resize!(A::ResizableArray, dims::Tuple{Vararg{Int}}) =
-    error("changing the number of dimensions is not allowed")
 
 """
 
@@ -434,12 +443,12 @@ Base.copy(::Type{ResizableArray{T}}, A::AbstractArray{T,N}) where {T,N} =
 Base.copy(::Type{ResizableArray{T,N}}, A::AbstractArray{T,N}) where {T,N} =
     copyto!(ResizableArray{T,N}(undef, size(A)), A)
 
-@inline Base.getindex(A::ResizableArray, i::Int) =
+@inline @propagate_inbounds Base.getindex(A::ResizableArray, i::Int) =
     (@boundscheck checkbounds(A, i);
      @inbounds r = getindex(A.vals, i);
      return r)
 
-@inline Base.setindex!(A::ResizableArray, x, i::Int) =
+@inline @propagate_inbounds Base.setindex!(A::ResizableArray, x, i::Int) =
     (@boundscheck checkbounds(A, i);
      @inbounds r = setindex!(A.vals, x, i);
      return r)
