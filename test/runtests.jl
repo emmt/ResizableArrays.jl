@@ -47,7 +47,7 @@ slice(A::AbstractArray{<:Any,5}, I) = A[:,:,:,:,I]
         copyto!(B, A)
         @test all(i -> A[i] == B[i], 1:length(A))
         @test all(i -> A[i] == B[i], CartesianIndices(A))
-        @test all(i -> A[i] == B.vals[i], 1:length(A))
+        @test all(i -> A[i] == parent(B)[i], 1:length(A))
         @test A == B
         for i in eachindex(B)
             B[i] = rand()
@@ -90,6 +90,10 @@ slice(A::AbstractArray{<:Any,5}, I) = A[:,:,:,:,I]
         @test_throws BoundsError B[0]
         @test_throws BoundsError B[length(B) + 1]
         @test_throws ErrorException resize!(B, (dims..., 5))
+
+        # Make a copy of A using a resizable array.
+        C = copyto!(similar(ResizableArray{T}, axes(A)), A)
+        @test C == A
 
         # Check equality for a different list of dimensions.
         C = rand(7)

@@ -160,10 +160,10 @@ ResizableArray{T}(arg, dims::NTuple{N,Int}) where {T,N} =
 
 ResizableArray{T,N}(arg, dims::Integer...) where {T,N} =
     ResizableArray{T,N}(arg, dims)
-ResizableArray{T,N}(arg, dims::Tuple{Vararg{Integer}}) where {T,N} =
-    ResizableArray{T,N}(arg, map(Int, dims))
-ResizableArray{T,N}(arg, dims::Tuple{Vararg{Int}}) where {T,N} =
-    error("mismatching number of dimensions")
+function ResizableArray{T,N}(arg, dims::Tuple{Vararg{Integer}}) where {T,N}
+    length(dims) == N || error("mismatching number of dimensions")
+    return ResizableArray{T,N}(arg, map(Int, dims))
+end
 
 ResizableArray{T,N}(A::AbstractArray{<:Any,N}) where {T,N} =
     copyto!(ResizableArray{T,N}(undef, size(A)), A)
@@ -280,6 +280,9 @@ Base.axes(A::ResizableArray, d::Integer) = Base.OneTo(size(A, d))
 @inline Base.axes1(A::ResizableArray{<:Any,0}) = OneTo(1)
 @inline Base.axes1(A::ResizableArray) = OneTo(A.dims[1])
 Base.IndexStyle(::Type{<:ResizableArray}) = IndexLinear()
+Base.parent(A::ResizableArray) = A.vals
+Base.similar(::Type{ResizableArray{T}}, dims::NTuple{N,Int}) where {T,N} =
+    ResizableArray{T,N}(undef, dims)
 
 Base.:(==)(::ResizableArray, ::AbstractArray) = false
 Base.:(==)(::AbstractArray, ::ResizableArray) = false
