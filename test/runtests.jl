@@ -3,7 +3,7 @@ module ResizableArraysTests
 using Test
 using ResizableArrays
 using ResizableArrays: checkdimension, checkdimensions, _same_elements
-using Base: unsafe_convert
+using Base: unsafe_convert, elsize
 
 # FIXME: used @generated
 slice(A::AbstractArray{<:Any,2}, I) = A[:,I]
@@ -56,6 +56,8 @@ sum_v3(iter::AbstractArray) = (s = zero(eltype(iter));
         @test isgrowable(B) == (N > 0)
         @test IndexStyle(typeof(B)) == IndexLinear()
         @test eltype(B) == eltype(A)
+        @test elsize(B) == elsize(A)
+        @test sizeof(B) == sizeof(A)
         @test ndims(B) == ndims(A) == N
         @test size(B) == size(A)
         @test all(d -> size(B,d) == size(A,d), 1:(N+2))

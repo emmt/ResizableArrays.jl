@@ -14,7 +14,7 @@ export
     maxlength,
     shrink!
 
-using Base: tail, OneTo, throw_boundserror, @propagate_inbounds
+using Base: elsize, tail, OneTo, throw_boundserror, @propagate_inbounds
 
 """
 ## Create unitialized resizable array
@@ -301,6 +301,10 @@ Base.IndexStyle(::Type{<:ResizableArray}) = IndexLinear()
 Base.parent(A::ResizableArray) = A.vals
 Base.similar(::Type{ResizableArray{T}}, dims::NTuple{N,Int}) where {T,N} =
     ResizableArray{T,N}(undef, dims)
+
+# Make sizeof() return the number of bytes of the actual contents.
+Base.elsize(::Type{<:ResizableArray{T,N,B}}) where {T,N,B} = elsize(B)
+Base.sizeof(A::ResizableArray) = elsize(A)*length(A)
 
 # Make ResizableArray's efficient iterators.
 @inline Base.iterate(A::ResizableArray, i=1) =
