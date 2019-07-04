@@ -60,6 +60,7 @@ As a consequence, the storage used by a resizable array `A` can only grow unless
 `skrink!(A)` is called to reduce the storage to the minimum.  The call
 `copy(ResizableArray,A)` yields a copy of `A` which is a resizable array.
 
+To improve performances, you can indicate the minimum number of element
 
 ## Convert to resizable arrays
 
@@ -269,7 +270,7 @@ See also: [`ResizableArray`](@ref).
 """
 maxlength(A::ResizableArray) = length(A.vals)
 
-Base.eltype(::Type{<:ResizableArray{T}}) where {T} = T
+Base.eltype(::Type{<:ResizableArray{T,N}}) where {T,N} = T
 Base.ndims(::ResizableArray{T,N}) where {T,N} = N
 Base.length(A::ResizableArray) = A.len
 Base.size(A::ResizableArray) = A.dims
@@ -284,8 +285,10 @@ Base.parent(A::ResizableArray) = A.vals
 Base.similar(::Type{ResizableArray{T}}, dims::NTuple{N,Int}) where {T,N} =
     ResizableArray{T,N}(undef, dims)
 
+# Equality is false if rank is different.
 Base.:(==)(::ResizableArray, ::AbstractArray) = false
-Base.:(==)(::AbstractArray, ::ResizableArray) = false
+Base.:(==)(::AbstractArray,  ::ResizableArray) = false
+Base.:(==)(::ResizableArray, ::ResizableArray) = false
 
 Base.:(==)(A::ResizableVector{<:Any}, B::ResizableVector{<:Any}) =
     (length(A) == length(B) && _same_elements(A.vals, B.vals, length(A)))

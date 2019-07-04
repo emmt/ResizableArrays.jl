@@ -97,8 +97,10 @@ slice(A::AbstractArray{<:Any,5}, I) = A[:,:,:,:,I]
 
         # Check equality for a different list of dimensions.
         C = rand(7)
-        @test B != C
-        @test C != B
+        @test (B == C) == false
+        @test (C == B) == false
+        @test (B == ResizableArray(C)) == false
+        @test (ResizableArray(C) == B) == false
 
         # Check various constructors and custom buffer
         # (do not splat dimensions if N=0).
