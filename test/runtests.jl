@@ -2,7 +2,7 @@ module ResizableArraysTests
 
 using Test
 using ResizableArrays
-using ResizableArrays: checkdimension, checkdimensions
+using ResizableArrays: checkdimension, checkdimensions, _same_elements
 using Base: unsafe_convert
 
 # FIXME: used @generated
@@ -32,6 +32,14 @@ sum_v3(iter::AbstractArray) = (s = zero(eltype(iter));
         @test isgrowable(π) == false
         @test isgrowable((1,2,3)) == false
         @test isgrowable([1,2,3]) == true
+
+        # Make sure all variants of _same_elements are tested.
+        A = randn(3,4)
+        indexstyles = (IndexLinear(), IndexCartesian())
+        for indexstyle1 in indexstyles, indexstyle2 in indexstyles
+            @test _same_elements(indexstyle1, A, indexstyle2, A, length(A))
+        end
+
     end
     @testset "Dimensions: $dims" for dims in ((), (3,), (2,3), (2,3,4))
         N = length(dims)
@@ -198,7 +206,7 @@ end
         @test slice(R, 2:m+1) == A
         @test slice(R, m+2) == B
         m = 5
-        for hint in (prod(dims)*m, (dims..., m))
+        for hint in (prod(dims)*m, UInt(prod(dims)*m), (dims..., m))
             R = sizehint!(ResizableArray{T}(undef,dims...,0), hint)
             for k in 1:m
                 if isodd(k)
