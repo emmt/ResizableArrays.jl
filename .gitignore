@@ -1,6 +1,7 @@
 *~
 *.jl.cov
 *.jl.mem
+build/
 devel/
 work/
 temp/
