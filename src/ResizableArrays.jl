@@ -270,8 +270,6 @@ See also: [`ResizableArray`](@ref).
 """
 maxlength(A::ResizableArray) = length(A.vals)
 
-Base.eltype(::Type{<:ResizableArray{T,N}}) where {T,N} = T
-Base.ndims(::ResizableArray{T,N}) where {T,N} = N
 Base.length(A::ResizableArray) = A.len
 Base.size(A::ResizableArray) = A.dims
 Base.size(A::ResizableArray{T,N}, d::Integer) where {T,N} =
