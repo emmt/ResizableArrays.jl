@@ -145,6 +145,8 @@ mutable struct ResizableArray{T,N,B} <: DenseArray{T,N}
 
 end
 
+# Calling the `ResizableArray` constructor always creates a new instance.
+
 ResizableArray(arg, dims::Integer...) =
     ResizableArray(arg, dims)
 ResizableArray(arg, dims::Tuple{Vararg{Integer}}) =
@@ -162,10 +164,12 @@ ResizableArray{T}(arg, dims::NTuple{N,Int}) where {T,N} =
 ResizableArray{T,N}(arg, dims::Integer...) where {T,N} =
     ResizableArray{T,N}(arg, dims)
 function ResizableArray{T,N}(arg, dims::Tuple{Vararg{Integer}}) where {T,N}
-    length(dims) == N || error("mismatching number of dimensions")
+    length(dims) == N || _throw_mismatching_number_of_dimensions()
     return ResizableArray{T,N}(arg, map(Int, dims))
 end
 
+ResizableArray{T,N}(A::AbstractArray) where {T,N} =
+    _throw_mismatching_number_of_dimensions()
 ResizableArray{T,N}(A::AbstractArray{<:Any,N}) where {T,N} =
     copyto!(ResizableArray{T,N}(undef, size(A)), A)
 ResizableArray{T}(A::AbstractArray) where {T} =
@@ -173,10 +177,25 @@ ResizableArray{T}(A::AbstractArray) where {T} =
 ResizableArray(A::AbstractArray{T}) where {T} =
     copyto!(ResizableArray{T}(undef, size(A)), A)
 
-# Constructor for workspace of given rank and element type.
+# Constructor for, initially empty, workspace of given rank and element type.
 ResizableArray{T,N}() where {T,N} =
     ResizableArray{T,N}(undef, ntuple(i -> 0, Val(N)))
 
+@noinline _throw_mismatching_number_of_dimensions() =
+    throw(DimensionMismatch("mismatching number of dimensions"))
+
+# Make a resizable copy (ignore the last parameter in the signature).
+Base.copy(::Type{ResizableArray}, A::AbstractArray) =
+    ResizableArray(A)
+Base.copy(::Type{ResizableArray{T}}, A::AbstractArray) where {T} =
+    ResizableArray{T}(A)
+Base.copy(::Type{ResizableArray{T,N}}, A::AbstractArray) where {T,N} =
+    ResizableArray{T,N}(A)
+Base.copy(::Type{ResizableArray{T,N,B}}, A::AbstractArray) where {T,N,B} =
+    ResizableArray{T,N}(A)
+
+# Unlike the `ResizableArray` constructor, calling the `convert` method avoids
+# creating a new instance if possible.
 Base.convert(::Type{ResizableArray{T,N}}, A::ResizableArray{T,N}) where {T,N} = A
 Base.convert(::Type{ResizableArray{T}}, A::ResizableArray{T}) where {T} = A
 Base.convert(::Type{ResizableArray}, A::ResizableArray) = A
@@ -456,15 +475,6 @@ Base.append!(dst::ResizableArray, src::AbstractArray) =
 
 Base.prepend!(dst::ResizableArray, src::AbstractArray) =
     grow!(dst, src, true)
-
-Base.copy(::Type{ResizableArray}, A::AbstractArray{T,N}) where {T,N} =
-    copyto!(ResizableArray{T,N}(undef, size(A)), A)
-
-Base.copy(::Type{ResizableArray{T}}, A::AbstractArray{T,N}) where {T,N} =
-    copyto!(ResizableArray{T,N}(undef, size(A)), A)
-
-Base.copy(::Type{ResizableArray{T,N}}, A::AbstractArray{T,N}) where {T,N} =
-    copyto!(ResizableArray{T,N}(undef, size(A)), A)
 
 @inline @propagate_inbounds Base.getindex(A::ResizableArray, i::Int) =
     (@boundscheck checkbounds(A, i);

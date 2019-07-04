@@ -42,6 +42,7 @@ sum_v3(iter::AbstractArray) = (s = zero(eltype(iter));
 
     end
     @testset "Dimensions: $dims" for dims in ((), (3,), (2,3), (2,3,4))
+        altdims = map(UInt, dims) # used later
         N = length(dims)
         if N > 0
             A = rand(dims...)
@@ -77,7 +78,6 @@ sum_v3(iter::AbstractArray) = (s = zero(eltype(iter));
         copyto!(A, B)
         @test A == B
         if N > 0
-            dims16b = map(Int16, size(A)) # used later
             # Extend array B.
             tmpdims = collect(size(B))
             tmpdims[end] += 1
@@ -96,14 +96,18 @@ sum_v3(iter::AbstractArray) = (s = zero(eltype(iter));
             @test B == A
             @test C == B && B == C
             @test maxlength(B) == oldmaxlen
+            # Use copy to make a fresh resizable copy
             C = copy(ResizableArray, B)
             @test C == B
+            @test pointer(C) != pointer(B)
             @test maxlength(C) == length(C)
             C = copy(ResizableArray{T}, B)
             @test C == B
+            @test pointer(C) != pointer(B)
             @test maxlength(C) == length(C)
             C = copy(ResizableArray{T,N}, B)
             @test C == B
+            @test pointer(C) != pointer(B)
             @test maxlength(C) == length(C)
             shrink!(B)
             @test B == A
@@ -127,34 +131,29 @@ sum_v3(iter::AbstractArray) = (s = zero(eltype(iter));
         # Check various constructors and custom buffer
         # (do not splat dimensions if N=0).
         buf = Vector{T}(undef, length(A))
-        for arg in (undef, buf)
-            C = copyto!(ResizableArray{T}(arg, dims), A)
-            @test eltype(C) == eltype(A) && C == A
-            C = copyto!(ResizableArray{T,N}(arg, dims), A)
+        for arg in (undef, buf), sz in (dims, altdims)
+            if isa(arg, Vector)
+                # No parameters.
+                C = copyto!(ResizableArray(arg, sz), A)
+                @test eltype(C) == eltype(A) && C == A
+                if N > 0
+                    C = copyto!(ResizableArray(arg, sz...), A)
+                    @test eltype(C) == eltype(A) && C == A
+                end
+            end
+            # Parameter {T}.
+            C = copyto!(ResizableArray{T}(arg, sz), A)
             @test eltype(C) == eltype(A) && C == A
             if N > 0
-                C = copyto!(ResizableArray{T}(arg, dims...), A)
-                @test eltype(C) == eltype(A) && C == A
-                C = copyto!(ResizableArray{T,N}(arg, dims...), A)
-                @test eltype(C) == eltype(A) && C == A
-                C = copyto!(ResizableArray{T}(arg, dims16b), A)
-                @test eltype(C) == eltype(A) && C == A
-                C = copyto!(ResizableArray{T}(arg, dims16b...), A)
-                @test eltype(C) == eltype(A) && C == A
-                C = copyto!(ResizableArray{T,N}(arg, dims16b), A)
-                @test eltype(C) == eltype(A) && C == A
-                C = copyto!(ResizableArray{T,N}(arg, dims16b...), A)
+                C = copyto!(ResizableArray{T}(arg, sz...), A)
                 @test eltype(C) == eltype(A) && C == A
             end
-        end
-
-        # Check construction with various ways to specify the dimenions.
-        if N == 2
-            dim1, dim2 = Int16(dims[1]), Int32(dims[2])
-            C = copyto!(ResizableArray{T}(undef, dim1, dim2), A)
-            @test eltype(C) == eltype(A) && C == A
-            C = copyto!(ResizableArray{T}(undef, (dim1, dim2)), A)
-            @test eltype(C) == eltype(A) && C == A
+            # Parameters {T,N}.
+            C = copyto!(ResizableArray{T,N}(arg, sz), A)
+            if N > 0
+                @test eltype(C) == eltype(A) && C == A
+                C = copyto!(ResizableArray{T,N}(arg, sz...), A)
+            end
         end
 
         # Use constructor to convert array.
@@ -179,13 +178,25 @@ sum_v3(iter::AbstractArray) = (s = zero(eltype(iter));
         C = convert(ResizableArray{T,N}, A)
         @test eltype(C) == eltype(A) && C == A
 
-        # Use convert to convert resizable array.
-        C = convert(ResizableArray, B)
-        @test eltype(C) == eltype(B) && C == B
-        C = convert(ResizableArray{T}, B)
-        @test eltype(C) == eltype(B) && C == B
-        C = convert(ResizableArray{T,N}, B)
-        @test eltype(C) == eltype(B) && C == B
+        # Use convert to convert resizable array, result should be identical.
+        for pass in 1:3
+            C = (pass == 1 ? convert(ResizableArray,      B) :
+                 pass == 2 ? convert(ResizableArray{T},   B) :
+                 pass == 3 ? convert(ResizableArray{T,N}, B) : nothing)
+            @test eltype(C) == eltype(B)
+            @test C == B
+            @test pointer(C) == pointer(B)
+        end
+        # Use convert to convert resizable array, result should be different.
+        B = ResizableArray{Int16,N}(undef, dims)
+        for i in 1:length(B); B[i] = i; end
+        for pass in 1:2
+            C = (pass == 1 ? convert(ResizableArray{Int32},   B) :
+                 pass == 2 ? convert(ResizableArray{Int32,N}, B) : nothing)
+            @test eltype(C) == Int32
+            @test C == B
+            @test pointer(C) != pointer(B)
+        end
     end
 end
 
@@ -206,8 +217,8 @@ end
         @test slice(R, 2:m+1) == A
         @test slice(R, m+2) == B
         m = 5
-        for hint in (prod(dims)*m, UInt(prod(dims)*m), (dims..., m))
-            R = sizehint!(ResizableArray{T}(undef,dims...,0), hint)
+        for hint in (prod(dims)*m, (dims..., m), map(UInt, (dims..., m)))
+            R = sizehint!(ResizableArray{T}(undef, dims..., 0), hint)
             for k in 1:m
                 if isodd(k)
                     append!(R, B)
