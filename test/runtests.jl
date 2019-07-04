@@ -10,6 +10,16 @@ slice(A::AbstractArray{<:Any,3}, I) = A[:,:,I]
 slice(A::AbstractArray{<:Any,4}, I) = A[:,:,:,I]
 slice(A::AbstractArray{<:Any,5}, I) = A[:,:,:,:,I]
 
+sum_v1(iter::AbstractArray) = (s = zero(eltype(iter));
+                               for x in iter; s += x; end;
+                               return s)
+sum_v2(iter::AbstractArray) = (s = zero(eltype(iter));
+                               @inbounds for x in iter; s += x; end;
+                               return s)
+sum_v3(iter::AbstractArray) = (s = zero(eltype(iter));
+                               @inbounds @simd for x in iter; s += x; end;
+                               return s)
+
 @testset "Basic methods" begin
     @testset "Utilities" begin
         @test checkdimension(Bool, π) == false
@@ -196,6 +206,20 @@ end
             @test slice(R, 1) == C
             @test slice(R, m) == B
         end
+    end
+end
+
+@testset "Iterations" begin
+    T = Float64
+    @testset "Dimensions: $dims" for dims in ((3,), (2,3), (2,3,4))
+        N = length(dims)
+        A = rand(T, dims)
+        B = ResizableArray(A)
+        val = sum(A)
+        @test val ≈ sum(B)
+        @test val ≈ sum_v1(B)
+        @test val ≈ sum_v2(B)
+        @test val ≈ sum_v3(B)
     end
 end
 

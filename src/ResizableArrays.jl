@@ -283,6 +283,10 @@ Base.parent(A::ResizableArray) = A.vals
 Base.similar(::Type{ResizableArray{T}}, dims::NTuple{N,Int}) where {T,N} =
     ResizableArray{T,N}(undef, dims)
 
+# Make ResizableArray's efficient iterators.
+@inline Base.iterate(A::ResizableArray, i=1) =
+    ((i % UInt) - 1 < length(A) ? (@inbounds A[i], i + 1) : nothing)
+
 # Equality is false if rank is different.
 Base.:(==)(::ResizableArray, ::AbstractArray) = false
 Base.:(==)(::AbstractArray,  ::ResizableArray) = false
