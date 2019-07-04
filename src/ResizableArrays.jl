@@ -527,6 +527,7 @@ end
 Base.unsafe_convert(::Type{Ptr{T}}, A::ResizableArray{T}) where {T} =
     Base.unsafe_convert(Ptr{T}, A.vals)
 
+Base.pointer(A::ResizableArray) = pointer(A.vals)
 Base.pointer(A::ResizableArray, i::Integer) = pointer(A.vals, i)
 
 end # module

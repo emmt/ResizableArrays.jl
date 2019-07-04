@@ -3,6 +3,7 @@ module ResizableArraysTests
 using Test
 using ResizableArrays
 using ResizableArrays: checkdimension, checkdimensions
+using Base: unsafe_convert
 
 # FIXME: used @generated
 slice(A::AbstractArray{<:Any,2}, I) = A[:,I]
@@ -54,6 +55,9 @@ sum_v3(iter::AbstractArray) = (s = zero(eltype(iter));
         @test length(B) == length(A) == prod(dims)
         @test maxlength(B) == length(B)
         @test all(d -> axes(B,d) == axes(A,d), 1:(N+2))
+        @test unsafe_convert(Ptr{T}, B) == unsafe_convert(Ptr{T}, parent(B))
+        @test pointer(B) == pointer(parent(B))
+        @test pointer(B, 2) == pointer(parent(B), 2)
         copyto!(B, A)
         @test all(i -> A[i] == B[i], 1:length(A))
         @test all(i -> A[i] == B[i], CartesianIndices(A))
