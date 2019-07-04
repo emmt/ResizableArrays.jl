@@ -181,6 +181,19 @@ end
         @test slice(R, 1) == C
         @test slice(R, 2:m+1) == A
         @test slice(R, m+2) == B
+        m = 5
+        for hint in (prod(dims)*m, (dims..., m))
+            R = sizehint!(ResizableArray{T}(undef,dims...,0), hint)
+            for k in 1:m
+                if isodd(k)
+                    append!(R, B)
+                else
+                    prepend!(R, C)
+                end
+        end
+            @test slice(R, 1) == C
+            @test slice(R, m) == B
+        end
     end
 end
 

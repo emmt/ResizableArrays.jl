@@ -365,6 +365,21 @@ function Base.resize!(A::ResizableArray{T,N}, dims::NTuple{N,Int}) where {T,N}
     return A
 end
 
+Base.sizehint!(A::ResizableArray, dims::Integer...) = sizehint!(A, dims)
+function Base.sizehint!(A::ResizableArray, dims::Tuple{Vararg{Integer}})
+    length(dims) == ndims(A) ||
+        error("changing the number of dimensions is not allowed")
+    checkdimensions(dims)
+    len = prod(dims)
+    len > maxlength(A) && sizehint!(parent(A), len)
+    return A
+end
+function Base.sizehint!(A::ResizableArray, len::Integer)
+    len ≥ 0 || throw(ArgumentError("number of elements must be nonnegative"))
+    len > maxlength(A) && sizehint!(parent(A), len)
+    return A
+end
+
 """
 
 ```julia
