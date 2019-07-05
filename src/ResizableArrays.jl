@@ -24,7 +24,7 @@ ResizableArray{T}(undef, dims)
 
 yields a resizable array with uninitialized elements of type `T` and dimensions
 `dims`.  Dimensions may be a tuple of integers or a a list of integers.  The
-number `N` of dimensions may be explictely specified:
+number `N` of dimensions may be explicitly specified:
 
 ```julia
 ResizableArray{T,N}(undef, dims)
@@ -44,9 +44,9 @@ to augment the number of elements of the array.  When array elements are stored
 in a regular Julia vector, the number of element can always be augmented.
 Changing only the last dimension of a resizable array preserves its contents.
 
-Resizable arrays are designed to re-use workspace arrays if possible to avoid
-calling the garbage collector.  This may be useful for real-time applications.
-As a consequence, the storage used by a resizable array `A` can only grow unless
+Resizable arrays are designed to re-use storage if possible to avoid calling
+the garbage collector.  This may be useful for real-time applications.  As a
+consequence, the storage used by a resizable array `A` can only grow unless
 `skrink!(A)` is called to reduce the storage to the minimum.  The call
 `copy(ResizableArray,A)` yields a copy of `A` which is a resizable array.
 

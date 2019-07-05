@@ -12,17 +12,15 @@ calls to external libraries via the `ccall` method.
 
 ## Creating a resizable array
 
-An unitialized resizable array is created by:
+An unitialized resizable array with elements of type `T` and dimensions `dims`
+is created by:
 
 ```julia
 ResizableArray{T}(undef, dims)
 ```
 
-which yields a resizable array with uninitialized elements of type `T` and
-dimensions `dims`.  Dimensions may be a tuple of integers or a a list of
-integers.
-
-The number `N` of dimensions may be explictely specified:
+Dimensions may be a tuple of integers or a a list of integers.  The number `N`
+of dimensions may be explicitly specified:
 
 ```julia
 ResizableArray{T,N}(undef, dims)
@@ -39,8 +37,9 @@ by:
 ResizableArray{T,N}()
 ```
 
-Note that the number of dimensions `N`, which like `T` is part of the signature
-of the type, must be specified in this case.
+The number of dimensions `N` must be specified in this case.  The
+element type `T` and the number of dimensions `N` are part of the signature of
+the type and cannot be changed without creating a new instance.
 
 The `ResizableArray` constructor can be called to create a new resizable
 array from an existing array `A` of any kind:
@@ -72,8 +71,8 @@ convert(ResizableArray{T,N}, A)
 
 where `N` must match `ndims(A)` but `T` may be different from `eltype(A)`.
 Unlike the `ResizableArray` constructor which always returns a new instance,
-the `convert` method just returns its argument `A` if it is already an instance
-of `ResizableArray` with element type `T`.  Otherwise, the `convert` method
+the `convert` method just returns its argument `A` if it is already a resizable
+array whose type has the requested signature.  Otherwise, the `convert` method
 behaves as the `ResizableArray` constructor.
 
 The call `copy(ResizableArray,A)` yields a copy of `A` which is a resizable
@@ -99,22 +98,21 @@ Julia vector, the number of element can always be augmented (unless too big to
 fit in memory).  When such a resizable array is resized, its previous contents
 is preserved if only the last dimension is changed.
 
-Resizable arrays are designed to re-use workspace arrays if possible to avoid
-calling the garbage collector.  This may be useful for real-time applications.
-As a consequence, the storage used by a resizable array `A` can only grow unless
+Resizable arrays are designed to re-use storage if possible to avoid calling
+the garbage collector.  This may be useful for real-time applications.  As a
+consequence, the storage used by a resizable array `A` can only grow unless
 `skrink!(A)` is called to reduce the storage to the minimum.
-
 
 
 ## Append or prepend contents
 
-Call:
+Calling:
 
 ```julia
 append!(A, B) -> A
 ```
 
-to append the elements of array `B` to a resizable array `A`.  As you may
+appends the elements of array `B` to a resizable array `A` and, as you may
 guess, calling:
 
 ```julia
