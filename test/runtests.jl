@@ -32,6 +32,9 @@ sum_v3(iter::AbstractArray) = (s = zero(eltype(iter));
         @test isgrowable(π) == false
         @test isgrowable((1,2,3)) == false
         @test isgrowable([1,2,3]) == true
+        for T in (Int16, Float32, Tuple{Float64,Float64})
+            @test elsize(ResizableArray{T,3,Vector{T}}) == sizeof(T)
+        end
 
         # Make sure all variants of _same_elements are tested.
         A = randn(3,4)
@@ -234,14 +237,14 @@ end
         @test slice(R, m+2) == B
         @test length(extdims) == length(extaltdims) == N+1
         for hint in (prod(extdims), extdims, extaltdims)
-            R = sizehint!(ResizableArray{T}(undef, dims..., 0), hint)
+            R = sizehint!(ResizableArray{T}(undef, dims..., 0), hint...)
             for k in 1:m
                 if isodd(k)
                     append!(R, B)
                 else
                     prepend!(R, C)
                 end
-        end
+            end
             @test slice(R, 1) == C
             @test slice(R, m) == B
         end
