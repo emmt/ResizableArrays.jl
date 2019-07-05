@@ -17,7 +17,6 @@ export
 using Base: elsize, tail, OneTo, throw_boundserror, @propagate_inbounds
 
 """
-## Create unitialized resizable array
 
 ```julia
 ResizableArray{T}(undef, dims)
@@ -31,28 +30,19 @@ number `N` of dimensions may be explictely specified:
 ResizableArray{T,N}(undef, dims)
 ```
 
-A resizable array stores its elements contiguously in a vector so linear
-indexing is fast.
-
-The dimensions of a resizable array `A` may be changed:
-
-```julia
-resize!(A, dims)
-```
-
-with `dims` the new dimensions.  The number of dimensions must remain unchanged
-but the length of the array may change.  Depending on the type of the object
-backing the storage of the array, it may be possible or not to augment the
-number of elements of the array.  When array elements are stored in a regular
-Julia vector, the number of element can be augmented.  When such a resizable
-array is resized, its contents is preserved if only the last dimension is
-changed.
-
-To create an empty resizable array of given rank and element type:
+To create an empty resizable array of given rank and element type, call:
 
 ```julia
 ResizableArray{T,N}()
 ```
+
+The dimensions of a resizable array `A` may be changed by calling
+`resize!(A,dims)` with `dims` the new dimensions.  The number of dimensions
+must remain unchanged but the length of the array may change.  Depending on the
+type of the object backing the storage of the array, it may be possible or not
+to augment the number of elements of the array.  When array elements are stored
+in a regular Julia vector, the number of element can always be augmented.
+Changing only the last dimension of a resizable array preserves its contents.
 
 Resizable arrays are designed to re-use workspace arrays if possible to avoid
 calling the garbage collector.  This may be useful for real-time applications.
@@ -60,37 +50,30 @@ As a consequence, the storage used by a resizable array `A` can only grow unless
 `skrink!(A)` is called to reduce the storage to the minimum.  The call
 `copy(ResizableArray,A)` yields a copy of `A` which is a resizable array.
 
-To improve performances, you can indicate the minimum number of element
+To improve performances, call `sizehint!(A,n)` to indicate the minimum number
+of elements to preallocate for `A` (`n` can be a number of elements or array
+dimensions).
 
-## Convert to resizable arrays
-
-The [`convert`](@ref) and `ResizableArray` methods can be used to convert an
-array `A` to a resizable array:
+The `ResizableArray` constructor and the `convert` method can be used to to
+convert an array `A` to a resizable array:
 
 ```julia
-convert(ResizableArray, A)
 ResizableArray(A)
+convert(ResizableArray, A)
 ```
 
 Element type `T` and number of dimensions `N` may be specified:
 
 ```julia
-convert(ResizableArray{T}, A)
-ResizableArray{T}(A)
-convert(ResizableArray{T,N}, A)
-ResizableArray{T,N}(A)
+ResizableArray{T[,N]}(A)
+convert(ResizableArray{T[,N]}, A)
 ```
 
-`N` must match `ndims(A)` but `T` may be different from `eltype(A)`.
+`N` must match `ndims(A)` but `T` may be different from `eltype(A)`.  If
+possible, the `convert` method returns the input array while the
+`ResizableArray` constructor always returns a new instance.
 
-When using the [`convert`](@ref) or the `ResizableArray` methods to convert an
-array into a resizable array, the buffer for backing storage is always an
-instance of `Vector{T}`.
-
-
-## Custom storage
-
-The default storage of the elements of a resizable array is provided by a
+The default storage for the elements of a resizable array is provided by a
 regular Julia vector.  To use an object `buf` to store the elements of a
 resizable array, use one of the following:
 
@@ -450,10 +433,10 @@ The `N-1` first dimensions of the result are the leading dimensions of `A`.  If
 is the sum of the last dimensions of `A` and `B`; otherwise, the last dimension
 of the result is one plus the last dimension of `A`.
 
-The depending on argument `prepend`, method `grow!` is equivalent to
-[`append!`](@ref) or to [`prepend!`](@ref).
+Depending on argument `prepend`, calling the `grow!` method is equivalent to
+calling `append!` or `prepend!` methods.
 
-See also [`ResizableArray`](@ref), [`append!`](@ref) and [`prepend!`](@ref).
+See also [`ResizableArray`](@ref).
 
 """
 function grow!(A::ResizableArray{<:Any,N},
