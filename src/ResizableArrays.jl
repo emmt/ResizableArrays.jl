@@ -168,10 +168,12 @@ function ResizableArray{T,N}(arg, dims::Tuple{Vararg{Integer}}) where {T,N}
     return ResizableArray{T,N}(arg, map(Int, dims))
 end
 
-ResizableArray{T,N}(A::AbstractArray) where {T,N} =
-    _throw_mismatching_number_of_dimensions()
-ResizableArray{T,N}(A::AbstractArray{<:Any,N}) where {T,N} =
-    copyto!(ResizableArray{T,N}(undef, size(A)), A)
+ResizableArray{T,N,B}(A::AbstractArray) where {T,N,B} =
+    (Vector{T} <: B ? ResizableArray{T,N}(A) :
+     _throw_invalid_buffer_type(B,T))
+ResizableArray{T,N}(A::AbstractArray{<:Any,M}) where {T,N,M} =
+    (M == N ? copyto!(ResizableArray{T,N}(undef, size(A)), A) :
+     _throw_mismatching_number_of_dimensions())
 ResizableArray{T}(A::AbstractArray) where {T} =
     copyto!(ResizableArray{T}(undef, size(A)), A)
 ResizableArray(A::AbstractArray{T}) where {T} =
@@ -184,7 +186,11 @@ ResizableArray{T,N}() where {T,N} =
 @noinline _throw_mismatching_number_of_dimensions() =
     throw(DimensionMismatch("mismatching number of dimensions"))
 
-# Make a resizable copy (ignore the last parameter in the signature).
+# TypeError is more appropriate but we want a specific error message.
+@noinline _throw_invalid_buffer_type(::Type{B},::Type{T}) where {B,T} =
+    throw(ErrorException("invalid buffer type $B (must be ≥ Vector{$T})"))
+
+# Make a resizable copy.
 Base.copy(::Type{ResizableArray}, A::AbstractArray) =
     ResizableArray(A)
 Base.copy(::Type{ResizableArray{T}}, A::AbstractArray) where {T} =
@@ -192,19 +198,21 @@ Base.copy(::Type{ResizableArray{T}}, A::AbstractArray) where {T} =
 Base.copy(::Type{ResizableArray{T,N}}, A::AbstractArray) where {T,N} =
     ResizableArray{T,N}(A)
 Base.copy(::Type{ResizableArray{T,N,B}}, A::AbstractArray) where {T,N,B} =
-    ResizableArray{T,N}(A)
+    ResizableArray{T,N,B}(A)
 
 # Unlike the `ResizableArray` constructor, calling the `convert` method avoids
 # creating a new instance if possible.
+Base.convert(::Type{ResizableArray{T,N,B}}, A::ResizableArray{T,N,C}) where {T,N,B,C<:B} = A
 Base.convert(::Type{ResizableArray{T,N}}, A::ResizableArray{T,N}) where {T,N} = A
 Base.convert(::Type{ResizableArray{T}}, A::ResizableArray{T}) where {T} = A
 Base.convert(::Type{ResizableArray}, A::ResizableArray) = A
-
-Base.convert(::Type{ResizableArray{T,N}}, A::AbstractArray{<:Any,N}) where {T,N} =
+Base.convert(::Type{ResizableArray{T,N,B}}, A::AbstractArray) where {T,N,B} =
+    ResizableArray{T,N,B}(A)
+Base.convert(::Type{ResizableArray{T,N}}, A::AbstractArray) where {T,N} =
     ResizableArray{T,N}(A)
 Base.convert(::Type{ResizableArray{T}}, A::AbstractArray) where {T} =
     ResizableArray{T}(A)
-Base.convert(::Type{ResizableArray}, A::AbstractArray{T}) where {T} =
+Base.convert(::Type{ResizableArray}, A::AbstractArray) =
     ResizableArray(A)
 
 """
@@ -303,7 +311,7 @@ Base.similar(::Type{ResizableArray{T}}, dims::NTuple{N,Int}) where {T,N} =
     ResizableArray{T,N}(undef, dims)
 
 # Make sizeof() return the number of bytes of the actual contents.
-Base.elsize(::Type{<:ResizableArray{T,N,B}}) where {T,N,B} = elsize(B)
+Base.elsize(::Type{ResizableArray{T,N,B}}) where {T,N,B} = elsize(B)
 Base.sizeof(A::ResizableArray) = elsize(A)*length(A)
 
 # Make ResizableArray's efficient iterators.
