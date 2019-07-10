@@ -37,9 +37,9 @@ by:
 ResizableArray{T,N}()
 ```
 
-The number of dimensions `N` must be specified in this case.  The
-element type `T` and the number of dimensions `N` are part of the signature of
-the type and cannot be changed without creating a new instance.
+The number of dimensions `N` must be specified in this case.  The element type
+`T` and the number of dimensions `N` are part of the signature of the type and
+cannot be changed without creating a new instance.
 
 The `ResizableArray` constructor can be called to create a new resizable
 array from an existing array `A` of any kind:
@@ -77,9 +77,8 @@ behaves as the `ResizableArray` constructor.
 
 The call `copy(ResizableArray,A)` yields a copy of `A` which is a resizable
 array of same element type as `A`.  Call `copy(ResizableArray{T},A)` to specify
-a possibly different the element type `T`.  The number of dimensions `N` may
-also be specified but it must be the same as `A`:
-`copy(ResizableArray{T,N},A)`.
+a possibly different element type `T`.  The number of dimensions `N` may also
+be specified but it must be the same as `A`: `copy(ResizableArray{T,N},A)`.
 
 
 ## Resizing dimensions
@@ -94,7 +93,7 @@ with `dims` the new dimensions.  The number of dimensions must remain unchanged
 but the length of the array may change.  Depending on the type of the object
 backing the storage of the array, it may be possible or not to augment the
 number of elements of the array.  When array elements are stored in a regular
-Julia vector, the number of element can always be augmented (unless too big to
+Julia vector, the number of elements can always be augmented (unless too big to
 fit in memory).  When such a resizable array is resized, its previous contents
 is preserved if only the last dimension is changed.
 
@@ -181,9 +180,7 @@ otherwise the maximum number of elements of `A` is `length(buf)`.
     sure that the same buffer is not resized elsewhere.  Otherwise a
     segmentation fault may occur because `A` might assume a wrong buffer
     size.  To avoid this, the best is to make sure that only `A` owns `buf`
-    and only `A` manages its size.  In the current implementation, the size
-    of the internal buffer is never reduced so the same buffer may be
-    safely shared by different resizable arrays.
+    and only `A` manages its size.
 
 When using the `convert` method or the `ResizableArray` constructor to convert
 an array into a resizable array, the buffer for backing storage is always an
