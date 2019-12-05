@@ -473,13 +473,11 @@ Base.prepend!(dst::ResizableArray, src::AbstractArray) =
 
 @inline @propagate_inbounds Base.getindex(A::ResizableArray, i::Int) =
     (@boundscheck checkbounds(A, i);
-     @inbounds r = getindex(A.vals, i);
-     return r)
+     @inbounds getindex(A.vals, i))
 
 @inline @propagate_inbounds Base.setindex!(A::ResizableArray, x, i::Int) =
     (@boundscheck checkbounds(A, i);
-     @inbounds r = setindex!(A.vals, x, i);
-     return r)
+     @inbounds setindex!(A.vals, x, i))
 
 @inline Base.checkbounds(::Type{Bool}, A::ResizableArray, i::Int) =
     1 ≤ i ≤ length(A)
