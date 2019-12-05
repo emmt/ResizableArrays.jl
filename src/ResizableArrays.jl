@@ -330,16 +330,16 @@ Base.:(==)(A::AbstractArray{<:Any,N}, B::ResizableArray{<:Any,N}) where {N} =
 # Yields whether the `n` first elements of `A` and `B` are identical.  This
 # method is unsafe as it assumes that `A` and `B` have at least `n` elements.
 _same_elements(A, B, n::Integer) =
-    _same_elements(IndexStyle(A), A, IndexStyle(B), B, n)
+    _same_elements(IndexStyle(A), A, IndexStyle(B), B, Int(n))
 
-function _same_elements(::IndexLinear, A, ::IndexLinear, B, n::Integer)
-    @inbounds for i in 1:n
+function _same_elements(::IndexLinear, A, ::IndexLinear, B, n::Int)
+    @inbounds for i in Base.OneTo(n)
         A[i] == B[i] || return false
     end
     return true
 end
 
-function _same_elements(::IndexLinear, A, ::IndexStyle, B, n::Integer)
+function _same_elements(::IndexLinear, A, ::IndexStyle, B, n::Int)
     i = 0
     @inbounds for j in eachindex(B)
         (i += 1) ≤ n || return true
@@ -348,7 +348,7 @@ function _same_elements(::IndexLinear, A, ::IndexStyle, B, n::Integer)
     return (i ≥ n)
 end
 
-function _same_elements(::IndexStyle, A, ::IndexLinear, B, n::Integer)
+function _same_elements(::IndexStyle, A, ::IndexLinear, B, n::Int)
     j = 0
     @inbounds for i in eachindex(A)
         (j += 1) ≤ n || return true
@@ -357,7 +357,7 @@ function _same_elements(::IndexStyle, A, ::IndexLinear, B, n::Integer)
     return (j ≥ n)
 end
 
-function _same_elements(::IndexStyle, A, ::IndexStyle, B, n::Integer)
+function _same_elements(::IndexStyle, A, ::IndexStyle, B, n::Int)
     # this case should never occur
     j = 0
     @inbounds for i in eachindex(A,B)
@@ -421,17 +421,17 @@ end
 grow!(A, B, prepend=false) -> A
 ```
 
-grows resizable array `A` with the elements of `B` and returns `A`.
-If `prepend` is `true`, the elements of `B` are inserted before those of `A`;
-otherwise, the elements of `B` are appended after those of `A`.   By default,
+grows resizable array `A` with the elements of `B` and returns `A`.  If
+`prepend` is `true`, the elements of `B` are inserted before those of `A`;
+otherwise, the elements of `B` are appended after those of `A`.  By default,
 `prepend` is `false`.
 
 Assuming `A` has `N` dimensions, array `B` may have `N` or `N-1` dimensions.
-The `N-1` first dimensions of `B` must match the leading dimensions of `A`.
-The `N-1` first dimensions of the result are the leading dimensions of `A`.  If
-`B` has the same number of dimensions as `A`, the last dimension of the result
-is the sum of the last dimensions of `A` and `B`; otherwise, the last dimension
-of the result is one plus the last dimension of `A`.
+The `N-1` leading dimensions of `A` and `B` must be identical and are the
+leading dimensions of the result.  If `B` has the same number of dimensions as
+`A`, the last dimension of the result is the sum of the last dimensions of `A`
+and `B`; otherwise, the last dimension of the result is one plus the last
+dimension of `A`.
 
 Depending on argument `prepend`, calling the `grow!` method is equivalent to
 calling `append!` or `prepend!` methods.
