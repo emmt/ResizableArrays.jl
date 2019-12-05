@@ -480,7 +480,7 @@ Base.prepend!(dst::ResizableArray, src::AbstractArray) =
      @inbounds setindex!(A.vals, x, i))
 
 @inline Base.checkbounds(::Type{Bool}, A::ResizableArray, i::Int) =
-    1 ≤ i ≤ length(A)
+    (i % UInt) - 1 < length(A)
 
 Base.copyto!(dst::ResizableArray{T}, src::Array{T}) where {T} =
     copyto!(dst, 1, src, 1, length(src))
