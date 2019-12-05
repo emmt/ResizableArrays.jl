@@ -45,23 +45,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Installation",
     "title": "Installation",
     "category": "section",
-    "text": "ResizableArrays is not yet an offical Julia package but it is easy to install it from Julia as explained here."
-},
-
-{
-    "location": "install/#Using-the-package-manager-1",
-    "page": "Installation",
-    "title": "Using the package manager",
-    "category": "section",
-    "text": "At the REPL of Julia, hit the ] key to switch to the package manager REPL (you should get a ... pkg> prompt) and type:pkg> add https://github.com/emmt/ResizableArrays.jlwhere pkg> represents the package manager prompt and https protocol has been assumed; if ssh is more suitable for you, then type:pkg> add git@github.com:emmt/ResizableArrays.jlinstead.  To check whether the ResizableArrays package works correctly, type:pkg> test ResizableArraysLater, to update to the last version (and run tests), you can type:pkg> update ResizableArrays\npkg> build ResizableArrays\npkg> test ResizableArraysIf something goes wrong, it may be because you already have an old version of ResizableArrays.  Uninstall ResizableArrays as follows:pkg> rm ResizableArrays\npkg> gc\npkg> add https://github.com/emmt/ResizableArrays.jlbefore re-installing.To revert to Julia\'s REPL, hit the Backspace key at the ... pkg> prompt."
-},
-
-{
-    "location": "install/#Installation-in-scripts-1",
-    "page": "Installation",
-    "title": "Installation in scripts",
-    "category": "section",
-    "text": "To install ResizableArrays in a Julia script, write:if VERSION >= v\"0.7.0-\"; using Pkg; end\nPkg.add(PackageSpec(url=\"https://github.com/emmt/ResizableArrays.jl\", rev=\"master\"));or with url=\"git@github.com:emmt/ResizableArrays.jl\" if you want to use ssh.This also works from the Julia REPL."
+    "text": "ResizableArrays is an offical Julia package so you just have to type:pkg> add ResizableArraysat Julia package manager prompt (at the REPL of Julia, hit the ] key to switch to the package manager prompt and hit the BackSpace key to return to Julia\'s prompt).If you want to stick to the master branch, do:pkg> add ResizableArrays#masterinstead."
 },
 
 {
