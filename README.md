@@ -4,7 +4,7 @@
 |:--------------------------------|:--------------------------------|:----------------------------------------------------------------|:--------------------------------------------------------------------|
 | [![][doc-dev-img]][doc-dev-url] | [![][license-img]][license-url] | [![][travis-img]][travis-url] [![][appveyor-img]][appveyor-url] | [![][coveralls-img]][coveralls-url] [![][codecov-img]][codecov-url] |
 
-The ResizableArray package provides multi-dimensional arrays which are
+The ResizableArrays package provides multi-dimensional arrays which are
 resizable and which are intended to be as efficient as Julia arrays.  This
 circumvents the Julia limitation that only uni-dimensional arrays (of type
 `Vector`) are resizable.  The only restriction is that the number of dimensions
