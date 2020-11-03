@@ -17,24 +17,17 @@ export
 using Base: elsize, tail, OneTo, throw_boundserror, @propagate_inbounds
 
 """
-
-```julia
-ResizableArray{T}(undef, dims)
-```
+    ResizableArray{T}(undef, dims)
 
 yields a resizable array with uninitialized elements of type `T` and dimensions
 `dims`.  Dimensions may be a tuple of integers or a a list of integers.  The
 number `N` of dimensions may be explicitly specified:
 
-```julia
-ResizableArray{T,N}(undef, dims)
-```
+    ResizableArray{T,N}(undef, dims)
 
 To create an empty resizable array of given rank and element type, call:
 
-```julia
-ResizableArray{T,N}()
-```
+    ResizableArray{T,N}()
 
 The dimensions of a resizable array `A` may be changed by calling
 `resize!(A,dims)` with `dims` the new dimensions.  The number of dimensions
@@ -57,17 +50,13 @@ dimensions).
 The `ResizableArray` constructor and the `convert` method can be used to to
 convert an array `A` to a resizable array:
 
-```julia
-ResizableArray(A)
-convert(ResizableArray, A)
-```
+    ResizableArray(A)
+    convert(ResizableArray, A)
 
 Element type `T` and number of dimensions `N` may be specified:
 
-```julia
-ResizableArray{T[,N]}(A)
-convert(ResizableArray{T[,N]}, A)
-```
+    ResizableArray{T[,N]}(A)
+    convert(ResizableArray{T[,N]}, A)
 
 `N` must match `ndims(A)` but `T` may be different from `eltype(A)`.  If
 possible, the `convert` method returns the input array while the
@@ -77,11 +66,9 @@ The default storage for the elements of a resizable array is provided by a
 regular Julia vector.  To use an object `buf` to store the elements of a
 resizable array, use one of the following:
 
-```julia
-A = ResizableArray(buf, dims)
-A = ResizableArray{T}(buf, dims)
-A = ResizableArray{T,N}(buf, dims)
-```
+    A = ResizableArray(buf, dims)
+    A = ResizableArray{T}(buf, dims)
+    A = ResizableArray{T,N}(buf, dims)
 
 The buffer `buf` must store its elements contiguously using linear indexing
 style with 1-based indices and have element type `T`, that is
@@ -199,9 +186,7 @@ Base.convert(::Type{ResizableArray}, A::AbstractArray) =
     ResizableArray(A)
 
 """
-```julia
-ResizableVector{T}
-```
+    ResizableVector{T}
 
 Supertype for one-dimensional resizable arrays with elements of type `T`.
 Alias for [`ResizableArray{T,1}`](@ref).
@@ -210,9 +195,7 @@ Alias for [`ResizableArray{T,1}`](@ref).
 const ResizableVector{T,B} = ResizableArray{T,1,B}
 
 """
-```julia
-ResizableMatrix{T}
-```
+    ResizableMatrix{T}
 
 Supertype for two-dimensional resizable arrays with elements of type `T`.
 Alias for [`ResizableArray{T,2}`](@ref).
@@ -221,9 +204,7 @@ Alias for [`ResizableArray{T,2}`](@ref).
 const ResizableMatrix{T,B} = ResizableArray{T,2,B}
 
 """
-```julia
-checkdimension(Bool, dim) -> boolean
-```
+    checkdimension(Bool, dim) -> boolean
 
 yields whether `dim` is a valid dimension length (that is a nonnegative
 integer).
@@ -233,15 +214,12 @@ integer).
 @inline checkdimension(::Type{Bool}, dim) = false
 
 """
-```julia
-checkdimensions(Bool, dims) -> boolean
-```
+    checkdimensions(Bool, dims) -> boolean
 
 yields whether `dims` is a valid list of dimensions.
 
-```julia
-checkdimensions(dims)
-```
+    checkdimensions(dims)
+
 throws an error if `dims` is not a valid list of dimensions.
 
 """
@@ -255,9 +233,7 @@ throws an error if `dims` is not a valid list of dimensions.
     error("invalid dimension(s)")
 
 """
-```julia
-isgrowable(x) -> boolean
-```
+    isgrowable(x) -> boolean
 
 yields whether `x` is a growable object, that is its size can be augmented.
 
@@ -268,9 +244,7 @@ isgrowable(::Vector) = true
 isgrowable(::Any) = false
 
 """
-```julia
-maxlength(A)
-```
+    maxlength(A)
 
 yields the maximum number of elements which can be stored in resizable
 array `A` without resizing its internal buffer.
@@ -400,10 +374,7 @@ function Base.sizehint!(A::ResizableArray, len::Integer)
 end
 
 """
-
-```julia
-shrink!(A) -> A
-```
+    shrink!(A) -> A
 
 shrinks as much as possible the storage of resizable array `A` and returns `A`.
 Call `copy(ResizableArray,A)` to make a copy of `A` which is a resizable array
@@ -416,10 +387,7 @@ function shrink!(A::ResizableArray)
 end
 
 """
-
-```julia
-grow!(A, B, prepend=false) -> A
-```
+    grow!(A, B, prepend=false) -> A
 
 grows resizable array `A` with the elements of `B` and returns `A`.  If
 `prepend` is `true`, the elements of `B` are inserted before those of `A`;
