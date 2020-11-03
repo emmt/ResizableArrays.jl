@@ -30,8 +30,8 @@ Julia object to store the elements of a resizable array, not just a
 [license-url]: ./LICENSE.md
 [license-img]: http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat
 
-[travis-img]: https://travis-ci.org/emmt/ResizableArrays.jl.svg?branch=master
-[travis-url]: https://travis-ci.org/emmt/ResizableArrays.jl
+[travis-img]: https://travis-ci.com/emmt/ResizableArrays.jl.svg?branch=master
+[travis-url]: https://travis-ci.com/emmt/ResizableArrays.jl
 
 [appveyor-img]: https://ci.appveyor.com/api/projects/status/github/emmt/ResizableArrays.jl?branch=master
 [appveyor-url]: https://ci.appveyor.com/project/emmt/ResizableArrays-jl/branch/master
