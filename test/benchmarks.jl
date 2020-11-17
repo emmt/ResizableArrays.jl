@@ -44,8 +44,15 @@ function mycopyto!(::IndexCartesian,
     return dst
 end
 
-if false
-A = rand(5,10,20)
+T = Float32
+siz = (8,16,32)
+len = prod(siz)
+
+str = string("All arrays have element type `$T`, size ", join(siz, "×"),
+             " and $len elements.")
+println(repeat("*", length(str)), "\n", str, "\n", repeat("*", length(str)))
+
+A = rand(T, siz)
 T = eltype(A)
 B = ResizableArray{T}(undef, size(A))
 C = similar(A)
@@ -53,9 +60,6 @@ D = ResizableArray{T}(undef, size(A))
 copyto!(C, A)
 copyto!(B, A)
 copyto!(D, B)
-println("**********")
-@printf("All arrays have %d elements.\n", length(A))
-println("**********")
 
 @printf("copyto!          Array -> Array ........................")
 @btime copyto!($C, $A)
@@ -91,8 +95,6 @@ println()
 @printf("myfill! Cartesian ResizableArray .......................")
 @btime myfill!(IndexCartesian(), $B, π)
 
-end # if false
-
 function repeat_v1(v::Vector{T}, n::Int) where {T}
     r = ResizableArray{T,2}(undef, length(v),0)
     for i in 1:n
@@ -109,7 +111,7 @@ function repeat_v2(v::Vector{T}, n::Int) where {T}
     end
     return r
 end
-v = [1,2,3,4,5]
+v = T[1,2,3,4,5]
 println()
 @printf("append! without sizehint! ...")
 @btime repeat_v1($v, 50);
@@ -126,8 +128,6 @@ sum_v3(iter::AbstractArray) = (s = zero(eltype(iter));
                                @inbounds @simd for x in iter; s += x; end;
                                return s)
 
-A = randn(1000)
-B = ResizableArray(A)
 println()
 @printf("sum(::Array) ...................................")
 @btime sum($A);
