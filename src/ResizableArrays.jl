@@ -264,8 +264,8 @@ Base.size(A::ResizableArray{T,N}, d::Integer) where {T,N} =
     (d > N ? 1 : d ≥ 1 ? size(A)[d] : error("out of range dimension"))
 Base.axes(A::ResizableArray) = map(Base.OneTo, size(A))
 Base.axes(A::ResizableArray, d::Integer) = Base.OneTo(size(A, d))
-@inline Base.axes1(A::ResizableArray{<:Any,0}) = Base.OneTo(1)
-@inline Base.axes1(A::ResizableArray) = Base.OneTo(size(A, 1))
+Base.axes1(A::ResizableArray{<:Any,0}) = Base.OneTo(1)
+Base.axes1(A::ResizableArray) = Base.OneTo(size(A, 1))
 Base.IndexStyle(::Type{<:ResizableArray}) = IndexLinear()
 Base.parent(A::ResizableArray) = storage(A)
 Base.similar(::Type{ResizableArray{T}}, dims::NTuple{N,Int}) where {T,N} =
@@ -446,11 +446,11 @@ Base.append!(dst::ResizableArray, src::AbstractArray) =
 Base.prepend!(dst::ResizableArray, src::AbstractArray) =
     grow!(dst, src, true)
 
-@inline @propagate_inbounds Base.getindex(A::ResizableArray, i::Int) =
+@inline Base.getindex(A::ResizableArray, i::Int) =
     (@boundscheck checkbounds(A, i);
      @inbounds getindex(storage(A), i))
 
-@inline @propagate_inbounds Base.setindex!(A::ResizableArray, x, i::Int) =
+@inline Base.setindex!(A::ResizableArray, x, i::Int) =
     (@boundscheck checkbounds(A, i);
      @inbounds setindex!(storage(A), x, i))
 
