@@ -2,7 +2,7 @@ module ResizableArraysTests
 
 using Test
 using ResizableArrays
-using ResizableArrays: checkdimension, checkdimensions, _same_elements
+using ResizableArrays: checkdimension, checkdimensions, unsafe_same_values
 using Base: unsafe_convert, elsize
 
 # FIXME: used @generated
@@ -36,11 +36,11 @@ sum_v3(iter::AbstractArray) = (s = zero(eltype(iter));
             @test elsize(ResizableArray{T,3,Vector{T}}) == sizeof(T)
         end
 
-        # Make sure all variants of _same_elements are tested.
+        # Make sure all variants of unsafe_same_values are tested.
         A = randn(3,4)
         indexstyles = (IndexLinear(), IndexCartesian())
         for indexstyle1 in indexstyles, indexstyle2 in indexstyles
-            @test _same_elements(indexstyle1, A, indexstyle2, A, length(A))
+            @test unsafe_same_values(indexstyle1, A, indexstyle2, A, length(A))
         end
 
     end

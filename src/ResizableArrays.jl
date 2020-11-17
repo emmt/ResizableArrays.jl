@@ -14,7 +14,7 @@ export
     maxlength,
     shrink!
 
-using Base: elsize, tail, OneTo, throw_boundserror, @propagate_inbounds
+using Base: elsize, tail, throw_boundserror, @propagate_inbounds
 
 """
     ResizableArray{T}(undef, dims)
@@ -47,22 +47,22 @@ To improve performances, call `sizehint!(A,n)` to indicate the minimum number
 of elements to preallocate for `A` (`n` can be a number of elements or array
 dimensions).
 
-The `ResizableArray` constructor and the `convert` method can be used to to
+The `ResizableArray` constructor and the `convert` method can be used to
 convert an array `A` to a resizable array:
 
     ResizableArray(A)
     convert(ResizableArray, A)
 
-Element type `T` and number of dimensions `N` may be specified:
+If possible, the `convert` method returns the input array while the
+`ResizableArray` constructor always returns a new instance.  Element type `T`
+and number of dimensions `N` may be specified:
 
     ResizableArray{T[,N]}(A)
     convert(ResizableArray{T[,N]}, A)
 
-`N` must match `ndims(A)` but `T` may be different from `eltype(A)`.  If
-possible, the `convert` method returns the input array while the
-`ResizableArray` constructor always returns a new instance.
+`N` must match `ndims(A)` but `T` may be different from `eltype(A)`.
 
-The default storage for the elements of a resizable array is provided by a
+By default, the storage for the elements of a resizable array is provided by a
 regular Julia vector.  To use an object `buf` to store the elements of a
 resizable array, use one of the following:
 
@@ -115,6 +115,11 @@ mutable struct ResizableArray{T,N,B} <: DenseArray{T,N}
 
 end
 
+# Accessors.
+storage(A::ResizableArray) = getfield(A, :vals)
+Base.length(A::ResizableArray) = getfield(A, :len)
+Base.size(A::ResizableArray) = getfield(A, :dims)
+
 # Calling the `ResizableArray` constructor always creates a new instance.
 
 ResizableArray(arg, dims::Integer...) =
@@ -134,16 +139,16 @@ ResizableArray{T}(arg, dims::NTuple{N,Int}) where {T,N} =
 ResizableArray{T,N}(arg, dims::Integer...) where {T,N} =
     ResizableArray{T,N}(arg, dims)
 function ResizableArray{T,N}(arg, dims::Tuple{Vararg{Integer}}) where {T,N}
-    length(dims) == N || _throw_mismatching_number_of_dimensions()
+    length(dims) == N || throw_mismatching_number_of_dimensions()
     return ResizableArray{T,N}(arg, map(Int, dims))
 end
 
 ResizableArray{T,N,B}(A::AbstractArray) where {T,N,B} =
     (Vector{T} <: B ? ResizableArray{T,N}(A) :
-     _throw_invalid_buffer_type(B,T))
+     throw_invalid_buffer_type(B,T))
 ResizableArray{T,N}(A::AbstractArray{<:Any,M}) where {T,N,M} =
     (M == N ? copyto!(ResizableArray{T,N}(undef, size(A)), A) :
-     _throw_mismatching_number_of_dimensions())
+     throw_mismatching_number_of_dimensions())
 ResizableArray{T}(A::AbstractArray) where {T} =
     copyto!(ResizableArray{T}(undef, size(A)), A)
 ResizableArray(A::AbstractArray{T}) where {T} =
@@ -153,11 +158,11 @@ ResizableArray(A::AbstractArray{T}) where {T} =
 ResizableArray{T,N}() where {T,N} =
     ResizableArray{T,N}(undef, ntuple(i -> 0, Val(N)))
 
-@noinline _throw_mismatching_number_of_dimensions() =
+@noinline throw_mismatching_number_of_dimensions() =
     throw(DimensionMismatch("mismatching number of dimensions"))
 
 # TypeError is more appropriate but we want a specific error message.
-@noinline _throw_invalid_buffer_type(::Type{B},::Type{T}) where {B,T} =
+@noinline throw_invalid_buffer_type(::Type{B},::Type{T}) where {B,T} =
     throw(ErrorException("invalid buffer type $B (must be ≥ Vector{$T})"))
 
 # Make a resizable copy.
@@ -238,7 +243,7 @@ throws an error if `dims` is not a valid list of dimensions.
 yields whether `x` is a growable object, that is its size can be augmented.
 
 """
-isgrowable(A::ResizableArray) = isgrowable(A.vals)
+isgrowable(A::ResizableArray) = isgrowable(storage(A))
 isgrowable(A::ResizableArray{T,0}) where {T} = false
 isgrowable(::Vector) = true
 isgrowable(::Any) = false
@@ -252,18 +257,17 @@ array `A` without resizing its internal buffer.
 See also: [`ResizableArray`](@ref).
 
 """
-maxlength(A::ResizableArray) = length(A.vals)
+maxlength(A::ResizableArray) = length(storage(A))
 
-Base.length(A::ResizableArray) = A.len
-Base.size(A::ResizableArray) = A.dims
+# Array interface.
 Base.size(A::ResizableArray{T,N}, d::Integer) where {T,N} =
-    (d > N ? 1 : d ≥ 1 ? A.dims[d] : error("out of range dimension"))
-Base.axes(A::ResizableArray) = map(OneTo, A.dims)
+    (d > N ? 1 : d ≥ 1 ? size(A)[d] : error("out of range dimension"))
+Base.axes(A::ResizableArray) = map(Base.OneTo, size(A))
 Base.axes(A::ResizableArray, d::Integer) = Base.OneTo(size(A, d))
-@inline Base.axes1(A::ResizableArray{<:Any,0}) = OneTo(1)
-@inline Base.axes1(A::ResizableArray) = OneTo(A.dims[1])
+@inline Base.axes1(A::ResizableArray{<:Any,0}) = Base.OneTo(1)
+@inline Base.axes1(A::ResizableArray) = Base.OneTo(size(A, 1))
 Base.IndexStyle(::Type{<:ResizableArray}) = IndexLinear()
-Base.parent(A::ResizableArray) = A.vals
+Base.parent(A::ResizableArray) = storage(A)
 Base.similar(::Type{ResizableArray{T}}, dims::NTuple{N,Int}) where {T,N} =
     ResizableArray{T,N}(undef, dims)
 
@@ -281,39 +285,42 @@ Base.:(==)(::AbstractArray,  ::ResizableArray) = false
 Base.:(==)(::ResizableArray, ::ResizableArray) = false
 
 Base.:(==)(A::ResizableVector{<:Any}, B::ResizableVector{<:Any}) =
-    (length(A) == length(B) && _same_elements(A.vals, B.vals, length(A)))
+    (length(A) == length(B) &&
+     unsafe_same_values(storage(A), storage(B), length(A)))
 
 Base.:(==)(A::ResizableArray{<:Any,N}, B::ResizableArray{<:Any,N}) where {N} =
-    (size(A) == size(B) && _same_elements(A.vals, B.vals, length(A)))
+    (size(A) == size(B) &&
+     unsafe_same_values(storage(A), storage(B), length(A)))
 
 Base.:(==)(A::ResizableVector{<:Any}, B::Vector{<:Any}) =
-    (length(A) == length(B) && _same_elements(A.vals, B, length(A)))
+    (length(A) == length(B) && unsafe_same_values(storage(A), B, length(A)))
 Base.:(==)(A::Vector{<:Any}, B::ResizableVector{<:Any}) =
-    (length(A) == length(B) && _same_elements(A, B.vals, length(A)))
+    (length(A) == length(B) && unsafe_same_values(A, storage(B), length(A)))
 
 Base.:(==)(A::ResizableArray{<:Any,N}, B::Array{<:Any,N}) where {N} =
-    (size(A) == size(B) && _same_elements(A.vals, B, length(A)))
+    (size(A) == size(B) && unsafe_same_values(storage(A), B, length(A)))
 Base.:(==)(A::Array{<:Any,N}, B::ResizableArray{<:Any,N}) where {N} =
-    (size(A) == size(B) && _same_elements(A, B.vals, length(A)))
+    (size(A) == size(B) && unsafe_same_values(A, storage(B), length(A)))
 
 Base.:(==)(A::ResizableArray{<:Any,N}, B::AbstractArray{<:Any,N}) where {N} =
-    (axes(A) == axes(B) && _same_elements(A.vals, B, length(A)))
+    (axes(A) == axes(B) && unsafe_same_values(storage(A), B, length(A)))
 Base.:(==)(A::AbstractArray{<:Any,N}, B::ResizableArray{<:Any,N}) where {N} =
-    (axes(A) == axes(B) && _same_elements(A, B.vals, length(A)))
+    (axes(A) == axes(B) && unsafe_same_values(A, storage(B), length(A)))
 
-# Yields whether the `n` first elements of `A` and `B` are identical.  This
-# method is unsafe as it assumes that `A` and `B` have at least `n` elements.
-_same_elements(A, B, n::Integer) =
-    _same_elements(IndexStyle(A), A, IndexStyle(B), B, Int(n))
+# Yields whether the `n` first elements of `A` and `B` have the same values.
+# This method is unsafe as it assumes that `A` and `B` have at least `n`
+# elements.
+unsafe_same_values(A, B, n::Integer) =
+    unsafe_same_values(IndexStyle(A), A, IndexStyle(B), B, Int(n))
 
-function _same_elements(::IndexLinear, A, ::IndexLinear, B, n::Int)
+function unsafe_same_values(::IndexLinear, A, ::IndexLinear, B, n::Int)
     @inbounds for i in Base.OneTo(n)
         A[i] == B[i] || return false
     end
     return true
 end
 
-function _same_elements(::IndexLinear, A, ::IndexStyle, B, n::Int)
+function unsafe_same_values(::IndexLinear, A, ::IndexStyle, B, n::Int)
     i = 0
     @inbounds for j in eachindex(B)
         (i += 1) ≤ n || return true
@@ -322,7 +329,7 @@ function _same_elements(::IndexLinear, A, ::IndexStyle, B, n::Int)
     return (i ≥ n)
 end
 
-function _same_elements(::IndexStyle, A, ::IndexLinear, B, n::Int)
+function unsafe_same_values(::IndexStyle, A, ::IndexLinear, B, n::Int)
     j = 0
     @inbounds for i in eachindex(A)
         (j += 1) ≤ n || return true
@@ -331,7 +338,7 @@ function _same_elements(::IndexStyle, A, ::IndexLinear, B, n::Int)
     return (j ≥ n)
 end
 
-function _same_elements(::IndexStyle, A, ::IndexStyle, B, n::Int)
+function unsafe_same_values(::IndexStyle, A, ::IndexStyle, B, n::Int)
     # this case should never occur
     j = 0
     @inbounds for i in eachindex(A,B)
@@ -351,9 +358,9 @@ function Base.resize!(A::ResizableArray{T,N}, dims::NTuple{N,Int}) where {T,N}
     if dims != size(A)
         checkdimensions(dims)
         newlen = prod(dims)
-        newlen > length(A.vals) && resize!(A.vals, newlen)
-        A.dims = dims
-        A.len = newlen
+        newlen > length(storage(A)) && resize!(storage(A), newlen)
+        setfield!(A, :dims, dims)
+        setfield!(A, :len, newlen)
     end
     return A
 end
@@ -382,7 +389,7 @@ with skrinked storage.
 
 """
 function shrink!(A::ResizableArray)
-    length(A) < length(A.vals) && resize!(A.vals, length(A))
+    length(A) < length(storage(A)) && resize!(storage(A), length(A))
     return A
 end
 
@@ -420,7 +427,7 @@ function grow!(A::ResizableArray{<:Any,N},
     lenA = length(A)
     lenB = length(B)
     minlen = lenA + lenB
-    buf = A.vals
+    buf = storage(A)
     length(buf) ≥ minlen || resize!(buf, minlen)
     if prepend
         copyto!(buf, lenB + 1, buf, 1, lenA)
@@ -428,8 +435,8 @@ function grow!(A::ResizableArray{<:Any,N},
     else
         copyto!(buf, lenA + 1, B, 1, lenB)
     end
-    A.len = lenA + lenB
-    A.dims = ntuple(d -> (d < N ? A.dims[d] : dimN), Val(N))
+    setfield!(A, :len, lenA + lenB)
+    setfield!(A, :dims, ntuple(d -> (d < N ? size(A,d) : dimN), Val(N)))
     return A
 end
 
@@ -441,11 +448,11 @@ Base.prepend!(dst::ResizableArray, src::AbstractArray) =
 
 @inline @propagate_inbounds Base.getindex(A::ResizableArray, i::Int) =
     (@boundscheck checkbounds(A, i);
-     @inbounds getindex(A.vals, i))
+     @inbounds getindex(storage(A), i))
 
 @inline @propagate_inbounds Base.setindex!(A::ResizableArray, x, i::Int) =
     (@boundscheck checkbounds(A, i);
-     @inbounds setindex!(A.vals, x, i))
+     @inbounds setindex!(storage(A), x, i))
 
 @inline Base.checkbounds(::Type{Bool}, A::ResizableArray, i::Int) =
     (i % UInt) - 1 < length(A)
@@ -461,7 +468,7 @@ function Base.copyto!(dst::ResizableArray{T}, doff::Integer,
                       src::Array{T}, soff::Integer, n::Integer) where {T}
     if n != 0
         checkcopyto(length(dst), doff, length(src), soff, n)
-        unsafe_copyto!(dst.vals, doff, src, soff, n)
+        unsafe_copyto!(storage(dst), doff, src, soff, n)
     end
     return dst
 end
@@ -471,7 +478,7 @@ function Base.copyto!(dst::Array{T}, doff::Integer,
                       n::Integer) where {T}
     if n != 0
         checkcopyto(length(dst), doff, length(src), soff, n)
-        unsafe_copyto!(dst, doff, src.vals, soff, n)
+        unsafe_copyto!(dst, doff, storage(src), soff, n)
     end
     return dst
 end
@@ -481,7 +488,7 @@ function Base.copyto!(dst::ResizableArray{T}, doff::Integer,
                       n::Integer) where {T}
     if n != 0
         checkcopyto(length(dst), doff, length(src), soff, n)
-        unsafe_copyto!(dst.vals, doff, src.vals, soff, n)
+        unsafe_copyto!(storage(dst), doff, storage(src), soff, n)
     end
     return dst
 end
@@ -496,9 +503,9 @@ end
 end
 
 Base.unsafe_convert(::Type{Ptr{T}}, A::ResizableArray{T}) where {T} =
-    Base.unsafe_convert(Ptr{T}, A.vals)
+    Base.unsafe_convert(Ptr{T}, storage(A))
 
-Base.pointer(A::ResizableArray) = pointer(A.vals)
-Base.pointer(A::ResizableArray, i::Integer) = pointer(A.vals, i)
+Base.pointer(A::ResizableArray) = pointer(storage(A))
+Base.pointer(A::ResizableArray, i::Integer) = pointer(storage(A), i)
 
 end # module
