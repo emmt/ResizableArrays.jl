@@ -20,8 +20,10 @@ sum_v2(iter::AbstractArray) = (s = zero(eltype(iter));
 sum_v3(iter::AbstractArray) = (s = zero(eltype(iter));
                                @inbounds @simd for x in iter; s += x; end;
                                return s)
+
+# Use memmove because memcpy may not be available (e.g., in Julia 1.0 and 1.1).
 unsafe_copy!(dst, src, nbytes::Integer) =
-    ccall(:memcpy, Ptr{Cvoid}, (Ptr{Cvoid}, Ptr{Cvoid}, Csize_t),
+    ccall(:memmove, Ptr{Cvoid}, (Ptr{Cvoid}, Ptr{Cvoid}, Csize_t),
           dst, src, nbytes)
 
 @testset "Basic methods" begin
