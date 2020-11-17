@@ -20,6 +20,9 @@ sum_v2(iter::AbstractArray) = (s = zero(eltype(iter));
 sum_v3(iter::AbstractArray) = (s = zero(eltype(iter));
                                @inbounds @simd for x in iter; s += x; end;
                                return s)
+unsafe_copy!(dst, src, nbytes::Integer) =
+    ccall(:memcpy, Ptr{Cvoid}, (Ptr{Cvoid}, Ptr{Cvoid}, Csize_t),
+          dst, src, nbytes)
 
 @testset "Basic methods" begin
     @testset "Utilities" begin
@@ -81,7 +84,11 @@ sum_v3(iter::AbstractArray) = (s = zero(eltype(iter));
         for i in eachindex(B)
             B[i] = rand()
         end
-        copyto!(A, B)
+        if isodd(N)
+            unsafe_copy!(A, B, sizeof(A))
+        else
+            copyto!(A, B)
+        end
         @test A == B
         if N > 0
             # Extend array B.
