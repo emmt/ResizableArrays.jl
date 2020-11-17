@@ -99,16 +99,14 @@ mutable struct ResizableArray{T,N,B} <: DenseArray{T,N}
         eltype(B) === T || error("buffer has a different element type")
         IndexStyle(B) === IndexLinear() ||
             error("buffer must have linear indexing style")
-        checkdimensions(dims)
-        len = prod(dims)
+        len = checkdimensions(dims)
         length(buf) ≥ len || error("buffer is too small")
         return new{T,N,B}(len, dims, buf)
     end
     # Inner constructor using regular Julia's vector to store elements.
     function ResizableArray{T,N}(::UndefInitializer,
                                  dims::NTuple{N,Int}) where {T,N}
-        checkdimensions(dims)
-        len = prod(dims)
+        len = checkdimensions(dims)
         buf = Vector{T}(undef, len)
         return new{T,N,Vector{T}}(len, dims, buf)
     end
@@ -209,33 +207,28 @@ Alias for [`ResizableArray{T,2}`](@ref).
 const ResizableMatrix{T,B} = ResizableArray{T,2,B}
 
 """
-    checkdimension(Bool, dim) -> boolean
+    checkdimensions(dims) -> len
 
-yields whether `dim` is a valid dimension length (that is a nonnegative
-integer).
-
-"""
-@inline checkdimension(::Type{Bool}, dim::Integer) = (dim ≥ 0)
-@inline checkdimension(::Type{Bool}, dim) = false
+yields total number of elements corresponding to the list of dimensions `dims`
+throwing an error if any dimension is invalid.
 
 """
-    checkdimensions(Bool, dims) -> boolean
+@inline checkdimensions(dims::NTuple{N,Int}) where {N} = begin
+    len = 1
+    ok = true
+    @inbounds for dim in dims
+        ok &= (dim ≥ 0)
+        len *= dim
+    end
+    ok || error("invalid dimension(s)")
+    return len
+end
 
-yields whether `dims` is a valid list of dimensions.
-
-    checkdimensions(dims)
-
-throws an error if `dims` is not a valid list of dimensions.
-
-"""
-@inline checkdimensions(::Type{Bool}, dims::Tuple) =
-    checkdimension(Bool, dims[1]) & checkdimensions(Bool, tail(dims))
-@inline checkdimensions(::Type{Bool}, ::Tuple{}) = true
-@inline checkdimensions(dims::Tuple) =
-    checkdimensions(Bool, dims) || throw_invalid_dimensions()
-
-@noinline throw_invalid_dimensions() =
-    error("invalid dimension(s)")
+to_size(x::Int) = (x,)
+to_size(x::Integer) = to_size(Int(x))
+to_size(x::Tuple{}) = x
+to_size(x::Tuple{Vararg{Int}}) = x
+to_size(x::Tuple{Vararg{Integer}}) = map(Int, x)
 
 """
     isgrowable(x) -> boolean
@@ -349,15 +342,14 @@ function unsafe_same_values(::IndexStyle, A, ::IndexStyle, B, n::Int)
 end
 
 Base.resize!(A::ResizableArray, dims::Integer...) = resize!(A, dims)
-function Base.resize!(A::ResizableArray, dims::Tuple{Vararg{Integer}})
-    length(dims) == ndims(A) ||
-        error("changing the number of dimensions is not allowed")
-    return resize!(A, map(Int, dims))
+function Base.resize!(A::ResizableArray{T,L},
+                      dims::NTuple{N,Integer}) where {T,L,N}
+    N == L || error("changing the number of dimensions is not allowed")
+    return resize!(A, to_size(dims))
 end
 function Base.resize!(A::ResizableArray{T,N}, dims::NTuple{N,Int}) where {T,N}
     if dims != size(A)
-        checkdimensions(dims)
-        newlen = prod(dims)
+        newlen = checkdimensions(dims)
         newlen > length(storage(A)) && resize!(storage(A), newlen)
         setfield!(A, :dims, dims)
         setfield!(A, :len, newlen)
@@ -366,15 +358,19 @@ function Base.resize!(A::ResizableArray{T,N}, dims::NTuple{N,Int}) where {T,N}
 end
 
 Base.sizehint!(A::ResizableArray, dims::Integer...) = sizehint!(A, dims)
-function Base.sizehint!(A::ResizableArray, dims::Tuple{Vararg{Integer}})
-    length(dims) == ndims(A) ||
-        error("changing the number of dimensions is not allowed")
-    checkdimensions(dims)
-    len = prod(dims)
+function Base.sizehint!(A::ResizableArray{T,L},
+                        dims::NTuple{N,Integer}) where {T,L,N}
+    N == L || error("changing the number of dimensions is not allowed")
+    return sizehint!(A, to_size(dims))
+end
+function Base.sizehint!(A::ResizableArray{T,N},
+                        dims::NTuple{N,Int}) where {T,N}
+    len = checkdimensions(dims)
     len > maxlength(A) && sizehint!(parent(A), len)
     return A
 end
-function Base.sizehint!(A::ResizableArray, len::Integer)
+Base.sizehint!(A::ResizableArray, len::Integer) = sizehint!(A, Int(len))
+function Base.sizehint!(A::ResizableArray, len::Int)
     len ≥ 0 || throw(ArgumentError("number of elements must be nonnegative"))
     len > maxlength(A) && sizehint!(parent(A), len)
     return A

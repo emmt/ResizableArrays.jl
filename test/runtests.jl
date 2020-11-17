@@ -2,7 +2,7 @@ module ResizableArraysTests
 
 using Test
 using ResizableArrays
-using ResizableArrays: checkdimension, checkdimensions, unsafe_same_values
+using ResizableArrays: unsafe_same_values, to_size
 using Base: unsafe_convert, elsize
 
 # FIXME: used @generated
@@ -23,12 +23,13 @@ sum_v3(iter::AbstractArray) = (s = zero(eltype(iter));
 
 @testset "Basic methods" begin
     @testset "Utilities" begin
-        @test checkdimension(Bool, π) == false
-        @test checkdimensions(Bool, ()) == true
-        @test checkdimensions(Bool, (1,)) == true
-        @test checkdimensions(Bool, (1,2,0)) == true
-        @test checkdimensions(Bool, (1,-2,0)) == false
-        @test_throws ErrorException checkdimensions((1,-2,0))
+        @test_throws MethodError to_size(π)
+        @test_throws MethodError to_size((π,))
+        @test to_size(()) === ()
+        @test to_size(Int8(4)) === (4,)
+        @test to_size(4) === (4,)
+        @test to_size((Int8(2),UInt16(3),Int32(4))) === (2,3,4,)
+        @test to_size((2,3,4,)) === (2,3,4,)
         @test isgrowable(π) == false
         @test isgrowable((1,2,3)) == false
         @test isgrowable([1,2,3]) == true
