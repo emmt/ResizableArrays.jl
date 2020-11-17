@@ -170,7 +170,7 @@ sum_v3(iter::AbstractArray) = (s = zero(eltype(iter));
 
         # Use constructor to convert array.
         C = ResizableArray{T,N}()
-        resize!(C, dims)
+        resize!(C, map(UInt16, dims))
         copyto!(C, A)
         @test eltype(C) == eltype(A) && C == A
 
@@ -237,7 +237,7 @@ end
         @test slice(R, 2:m+1) == A
         @test slice(R, m+2) == B
         @test length(extdims) == length(extaltdims) == N+1
-        for hint in (prod(extdims), extdims, extaltdims)
+        for hint in (UInt16(prod(extdims)), extdims, extaltdims)
             R = sizehint!(ResizableArray{T}(undef, dims..., 0), hint...)
             for k in 1:m
                 if isodd(k)
