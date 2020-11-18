@@ -498,10 +498,10 @@ end
      soff > 0 && soff - 1 + n ≤ slen) || throw(BoundsError())
 end
 
+# It is sufficient to extend `unsafe_convert` method with the following
+# signature to get a qualified pointer to the base address of the storage
+# buffer.
 Base.unsafe_convert(::Type{Ptr{T}}, A::ResizableArray{T}) where {T} =
     Base.unsafe_convert(Ptr{T}, storage(A))
-
-Base.pointer(A::ResizableArray) = pointer(storage(A))
-Base.pointer(A::ResizableArray, i::Integer) = pointer(storage(A), i)
 
 end # module
