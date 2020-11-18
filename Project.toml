@@ -1,10 +1,10 @@
 name = "ResizableArrays"
 uuid = "df514bf8-98b6-11e9-19f1-af1e340ea726"
 authors = ["Éric Thiébaut <eric.thiebaut@univ-lyon1.fr>"]
-version = "0.2.1"
+version = "0.3.0"
 
 [compat]
-julia = "^1"
+julia = "1.0"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
