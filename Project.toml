@@ -1,6 +1,6 @@
 name = "ResizableArrays"
 uuid = "df514bf8-98b6-11e9-19f1-af1e340ea726"
-authors = ["Éric Thiébaut <eric.thiebaut@univ-lyon1.fr>"]
+authors = ["Éric Thiébaut <https://github.com/emmt>"]
 version = "0.3.0"
 
 [compat]
