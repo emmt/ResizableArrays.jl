@@ -99,14 +99,14 @@ mutable struct ResizableArray{T,N,B} <: DenseArray{T,N}
         eltype(B) === T || error("buffer has a different element type")
         IndexStyle(B) === IndexLinear() ||
             error("buffer must have linear indexing style")
-        len = checkdimensions(dims)
+        len = checksize(dims)
         length(buf) ≥ len || error("buffer is too small")
         return new{T,N,B}(len, dims, buf)
     end
     # Inner constructor using regular Julia's vector to store elements.
     function ResizableArray{T,N}(::UndefInitializer,
                                  dims::NTuple{N,Int}) where {T,N}
-        len = checkdimensions(dims)
+        len = checksize(dims)
         buf = Vector{T}(undef, len)
         return new{T,N,Vector{T}}(len, dims, buf)
     end
@@ -207,13 +207,13 @@ Alias for [`ResizableArray{T,2}`](@ref).
 const ResizableMatrix{T,B} = ResizableArray{T,2,B}
 
 """
-    checkdimensions(dims) -> len
+    checksize(dims) -> len
 
-yields total number of elements corresponding to the list of dimensions `dims`
-throwing an error if any dimension is invalid.
+yields the number of elements of an array of size `dims` throwing an error if
+any dimension is invalid.
 
 """
-@inline checkdimensions(dims::NTuple{N,Int}) where {N} = begin
+checksize(dims::Dims) where {N} = begin
     len = 1
     ok = true
     @inbounds for dim in dims
@@ -349,7 +349,7 @@ function Base.resize!(A::ResizableArray{T,L},
 end
 function Base.resize!(A::ResizableArray{T,N}, dims::NTuple{N,Int}) where {T,N}
     if dims != size(A)
-        newlen = checkdimensions(dims)
+        newlen = checksize(dims)
         newlen > length(storage(A)) && resize!(storage(A), newlen)
         setfield!(A, :dims, dims)
         setfield!(A, :len, newlen)
@@ -365,7 +365,7 @@ function Base.sizehint!(A::ResizableArray{T,L},
 end
 function Base.sizehint!(A::ResizableArray{T,N},
                         dims::NTuple{N,Int}) where {T,N}
-    len = checkdimensions(dims)
+    len = checksize(dims)
     len > maxlength(A) && sizehint!(parent(A), len)
     return A
 end
@@ -442,13 +442,17 @@ Base.append!(dst::ResizableArray, src::AbstractArray) =
 Base.prepend!(dst::ResizableArray, src::AbstractArray) =
     grow!(dst, src, true)
 
-@inline Base.getindex(A::ResizableArray, i::Int) =
-    (@boundscheck checkbounds(A, i);
-     @inbounds getindex(storage(A), i))
+@inline Base.getindex(A::ResizableArray, i::Int) = begin
+    @boundscheck checkbounds(A, i);
+    @inbounds r = storage(A)[i]
+    r
+end
 
-@inline Base.setindex!(A::ResizableArray, x, i::Int) =
-    (@boundscheck checkbounds(A, i);
-     @inbounds setindex!(storage(A), x, i))
+@inline Base.setindex!(A::ResizableArray, x, i::Int) = begin
+    @boundscheck checkbounds(A, i);
+    @inbounds storage(A)[i] = x
+    A
+end
 
 @inline Base.checkbounds(::Type{Bool}, A::ResizableArray, i::Int) =
     (i % UInt) - 1 < length(A)
