@@ -1,4 +1,17 @@
-# Changes in ResizableArrays package
+# User visible changes in `ResizableArrays` package
+
+## Version 0.3.2
+
+- Use package `ArrayTools`.
+
+- Extend testing to Julia 1.7.
+
+
+## Version 0.3.1
+
+- Fix `setindex!` to return its first argument (as for any other Julia's
+  arrays).
+
 
 ## Version 0.3.0
 

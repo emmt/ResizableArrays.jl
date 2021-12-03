@@ -1,9 +1,8 @@
-#
-# ResizableArrays.jl --
-#
-# Implement arrays which are resizable.
-#
+"""
 
+Package `ResizableArrays` provides arrays which are resizable.
+
+"""
 module ResizableArrays
 
 export
@@ -14,6 +13,7 @@ export
     maxlength,
     shrink!
 
+using ArrayTools
 using Base: elsize, tail, throw_boundserror, @propagate_inbounds
 
 """
@@ -223,12 +223,6 @@ checksize(dims::Dims) where {N} = begin
     ok || error("invalid dimension(s)")
     return len
 end
-
-to_size(x::Int) = (x,)
-to_size(x::Integer) = to_size(Int(x))
-to_size(x::Tuple{}) = x
-to_size(x::Tuple{Vararg{Int}}) = x
-to_size(x::Tuple{Vararg{Integer}}) = map(Int, x)
 
 """
     isgrowable(x) -> boolean

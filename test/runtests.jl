@@ -2,7 +2,7 @@ module ResizableArraysTests
 
 using Test
 using ResizableArrays
-using ResizableArrays: unsafe_same_values, to_size
+using ResizableArrays: unsafe_same_values
 using Base: unsafe_convert, elsize
 
 # FIXME: used @generated
@@ -28,13 +28,6 @@ unsafe_copy!(dst, src, nbytes::Integer) =
 
 @testset "Basic methods" begin
     @testset "Utilities" begin
-        @test_throws MethodError to_size(π)
-        @test_throws MethodError to_size((π,))
-        @test to_size(()) === ()
-        @test to_size(Int8(4)) === (4,)
-        @test to_size(4) === (4,)
-        @test to_size((Int8(2),UInt16(3),Int32(4))) === (2,3,4,)
-        @test to_size((2,3,4,)) === (2,3,4,)
         @test isgrowable(π) == false
         @test isgrowable((1,2,3)) == false
         @test isgrowable([1,2,3]) == true
