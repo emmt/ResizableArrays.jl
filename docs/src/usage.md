@@ -1,12 +1,12 @@
 # Usage of resizable arrays
 
 Instances of ResizableArray can be used as any other Julia multi-dimensional
-arrays (sub-types of `AbstractArray`).  More specifically and like instances of
+arrays (sub-types of `AbstractArray`). More specifically and like instances of
 Julia `Array`, resizable arrays store their elements contiguously in
 [column-major storage
 order](https://en.wikipedia.org/wiki/Row-_and_column-major_order) and implement
-fast linear-indexing, .  Resizable arrays should be as efficient as instances
-of `Array` and can be used wherever an `Array` instance makes sense including
+fast linear-indexing, . Resizable arrays should be as efficient as instances of
+`Array` and can be used wherever an `Array` instance makes sense including
 calls to external libraries via the `ccall` method.
 
 
@@ -19,7 +19,7 @@ is created by:
 ResizableArray{T}(undef, dims)
 ```
 
-Dimensions may be a tuple of integers or a a list of integers.  The number `N`
+Dimensions may be a tuple of integers or a a list of integers. The number `N`
 of dimensions may be explicitly specified:
 
 ```julia
@@ -30,19 +30,19 @@ For convenience, `ResizableVector{T}` and `ResizableMatrix{T}` are provided as
 aliases to `ResizableArray{T,1}` and `ResizableArray{T,2}`.
 
 Since a resizable array is *resizable* its dimensions may be specified at any
-time (before using its contents).  An empty resizable array is simply created
+time (before using its contents). An empty resizable array is simply created
 by:
 
 ```julia
 ResizableArray{T,N}()
 ```
 
-The number of dimensions `N` must be specified in this case.  The element type
+The number of dimensions `N` must be specified in this case. The element type
 `T` and the number of dimensions `N` are part of the signature of the type and
 cannot be changed without creating a new instance.
 
-The `ResizableArray` constructor can be called to create a new resizable
-array from an existing array `A` of any kind:
+The `ResizableArray` constructor can be called to create a new resizable array
+from an existing array `A` of any kind:
 
 ```julia
 ResizableArray(A)
@@ -61,7 +61,7 @@ ResizableArray{T,N}(A)
 where `N` must match `ndims(A)` but `T` may be different from `eltype(A)`.
 
 The `convert` method can be called to convert an existing array `A` of any kind
-to a resizable array.  There are 3 possibilities:
+to a resizable array. There are 3 possibilities:
 
 ```julia
 convert(ResizableArray, A)
@@ -72,13 +72,13 @@ convert(ResizableArray{T,N}, A)
 where `N` must match `ndims(A)` but `T` may be different from `eltype(A)`.
 Unlike the `ResizableArray` constructor which always returns a new instance,
 the `convert` method just returns its argument `A` if it is already a resizable
-array whose type has the requested signature.  Otherwise, the `convert` method
+array whose type has the requested signature. Otherwise, the `convert` method
 behaves as the `ResizableArray` constructor.
 
 The call `copy(ResizableArray,A)` yields a copy of `A` which is a resizable
-array of same element type as `A`.  Call `copy(ResizableArray{T},A)` to specify
-a possibly different element type `T`.  The number of dimensions `N` may also
-be specified but it must be the same as `A`: `copy(ResizableArray{T,N},A)`.
+array of same element type as `A`. Call `copy(ResizableArray{T},A)` to specify
+a possibly different element type `T`. The number of dimensions `N` may also be
+specified but it must be the same as `A`: `copy(ResizableArray{T,N},A)`.
 
 
 ## Resizing dimensions
@@ -98,7 +98,7 @@ fit in memory).  When such a resizable array is resized, its previous contents
 is preserved if only the last dimension is changed.
 
 Resizable arrays are designed to re-use storage if possible to avoid calling
-the garbage collector.  This may be useful for real-time applications.  As a
+the garbage collector. This may be useful for real-time applications. As a
 consequence, the storage used by a resizable array `A` can only grow unless
 `skrink!(A)` is called to reduce the storage to the minimum.
 
@@ -118,10 +118,10 @@ guess, calling:
 prepend!(A, B) -> A
 ```
 
-inserts the elements of `B` before those of `A`.  Assuming `A` has `N`
-dimensions, array `B` may have `N` or `N-1` dimensions.  The `N-1` first
+inserts the elements of `B` before those of `A`. Assuming `A` has `N`
+dimensions, array `B` may have `N` or `N-1` dimensions. The `N-1` first
 dimensions of `B` must match the leading dimensions of `A`, these dimensions
-are left unchanged in the result.  If `B` has the same number of dimensions as
+are left unchanged in the result. If `B` has the same number of dimensions as
 `A`, the last dimension of the result is the sum of the last dimensions of `A`
 and `B`; otherwise, the last dimension of the result is one plus the last
 dimension of `A`.
@@ -157,7 +157,7 @@ stored in array `A` without resizing its internal buffer.
 ## Custom storage
 
 The default storage of the elements of a resizable array is provided by a
-regular Julia vector.  To use an object `buf` to store the elements of a
+regular Julia vector. To use an object `buf` to store the elements of a
 resizable array, use one of the following:
 
 ```julia
@@ -169,8 +169,8 @@ A = ResizableArray{T,N}(buf, dims)
 The buffer `buf` must store its elements contiguously using linear indexing
 style with 1-based indices and have element type `T`, that is
 `IndexStyle(typeof(buf))` and `eltype(buf)` must yield `IndexLinear()` and `T`
-respectively.  The methods, `IndexStyle`, `eltype`, `length`, `getindex` and
-`setindex!` must be applicable for the type of `buf`.  If the method `resize!`
+respectively. The methods, `IndexStyle`, `eltype`, `length`, `getindex` and
+`setindex!` must be applicable for the type of `buf`. If the method `resize!`
 is applicable for `buf`, the number of elements of `A` can be augmented;
 otherwise the maximum number of elements of `A` is `length(buf)`.
 
