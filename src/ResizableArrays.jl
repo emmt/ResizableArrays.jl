@@ -213,7 +213,7 @@ yields the number of elements of an array of size `dims` throwing an error if
 any dimension is invalid.
 
 """
-checksize(dims::Dims) where {N} = begin
+function checksize(dims::Dims)
     len = 1
     ok = true
     @inbounds for dim in dims
