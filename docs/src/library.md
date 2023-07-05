@@ -25,5 +25,9 @@ ResizableArrays.maxlength
 ```
 
 ```@docs
+ResizableArrays.grow!
+```
+
+```@docs
 ResizableArrays.shrink!
 ```

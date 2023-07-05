@@ -11,6 +11,7 @@ export
     ResizableVector,
     isgrowable,
     maxlength,
+    grow!,
     shrink!
 
 using ArrayTools
