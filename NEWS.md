@@ -1,5 +1,10 @@
 # User visible changes in `ResizableArrays` package
 
+## Version 0.3.3
+
+- Fix `ArrayTools` compatibility.
+
+
 ## Version 0.3.2
 
 - Use package `ArrayTools`.
