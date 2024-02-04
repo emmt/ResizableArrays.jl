@@ -152,10 +152,6 @@ ResizableArray{T}(A::AbstractArray) where {T} =
     copyto!(ResizableArray{T}(undef, size(A)), A)
 ResizableArray(A::AbstractArray{T}) where {T} =
     copyto!(ResizableArray{T}(undef, size(A)), A)
-ResizableVector(A::AbstractArray{T}) where {T} =
-    ResizableArray{T,1}(A)
-ResizableMatrix(A::AbstractArray{T}) where {T} =
-    ResizableArray{T,2}(A)
 
 # Constructor for, initially empty, workspace of given rank and element type.
 ResizableArray{T,N}() where {T,N} =
@@ -201,6 +197,8 @@ Alias for [`ResizableArray{T,1}`](@ref).
 
 """
 const ResizableVector{T,B} = ResizableArray{T,1,B}
+ResizableVector(A::AbstractArray{T}) where {T} =
+    ResizableArray{T,1}(A)
 
 """
     ResizableMatrix{T}
@@ -210,6 +208,8 @@ Alias for [`ResizableArray{T,2}`](@ref).
 
 """
 const ResizableMatrix{T,B} = ResizableArray{T,2,B}
+ResizableMatrix(A::AbstractArray{T}) where {T} =
+    ResizableArray{T,2}(A)
 
 """
     ResizableArrays.checksize(dims) -> len
