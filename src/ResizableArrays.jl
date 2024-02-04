@@ -152,6 +152,10 @@ ResizableArray{T}(A::AbstractArray) where {T} =
     copyto!(ResizableArray{T}(undef, size(A)), A)
 ResizableArray(A::AbstractArray{T}) where {T} =
     copyto!(ResizableArray{T}(undef, size(A)), A)
+ResizableVector(A::AbstractVector{T}) where {T} =
+    copyto!(ResizableVector{T}(undef, size(A)), A)
+ResizableMatrix(A::AbstractMatrix{T}) where {T} =
+    copyto!(ResizableMatrix{T}(undef, size(A)), A)
 
 # Constructor for, initially empty, workspace of given rank and element type.
 ResizableArray{T,N}() where {T,N} =
