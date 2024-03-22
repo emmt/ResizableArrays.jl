@@ -268,4 +268,11 @@ end
     end
 end
 
+@testset "Add new constructors" begin  # See https://github.com/emmt/ResizableArrays.jl/pull/3
+    @test ResizableVector(1:3) == ResizableArray(1:3)
+    @test_throws DimensionMismatch ResizableVector(rand(2, 4))
+    @test ResizableMatrix(reshape(1:9, 3, 3)) == ResizableArray(reshape(1:9, 3, 3))
+    @test_throws DimensionMismatch ResizableMatrix(1:3)
+end
+
 end # module
