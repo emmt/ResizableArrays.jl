@@ -92,11 +92,11 @@ otherwise the maximum number of elements of `A` is `length(buf)`.
 """
 mutable struct ResizableArray{T,N,B} <: DenseArray{T,N}
     len::Int
-    dims::NTuple{N,Int}
+    dims::Dims{N}
     vals::B
     # Inner constructor for provided storage buffer.
     function ResizableArray{T,N}(buf::B,
-                                 dims::NTuple{N,Int}) where {T,N,B}
+                                 dims::Dims{N}) where {T,N,B}
         eltype(B) === T || error("buffer has a different element type")
         IndexStyle(B) === IndexLinear() ||
             error("buffer must have linear indexing style")
@@ -106,7 +106,7 @@ mutable struct ResizableArray{T,N,B} <: DenseArray{T,N}
     end
     # Inner constructor using regular Julia's vector to store elements.
     function ResizableArray{T,N}(::UndefInitializer,
-                                 dims::NTuple{N,Int}) where {T,N}
+                                 dims::Dims{N}) where {T,N}
         len = checksize(dims)
         buf = Vector{T}(undef, len)
         return new{T,N,Vector{T}}(len, dims, buf)
@@ -125,14 +125,14 @@ ResizableArray(arg, dims::Integer...) =
     ResizableArray(arg, dims)
 ResizableArray(arg, dims::Tuple{Vararg{Integer}}) =
     ResizableArray(arg, map(Int, dims))
-ResizableArray(buf::B, dims::NTuple{N,Int}) where {N,B} =
+ResizableArray(buf::B, dims::Dims{N}) where {N,B} =
     ResizableArray{eltype(B),N}(buf, dims)
 
 ResizableArray{T}(arg, dims::Integer...) where {T} =
     ResizableArray{T}(arg, dims)
 ResizableArray{T}(arg, dims::Tuple{Vararg{Integer}}) where {T} =
     ResizableArray{T}(arg, map(Int, dims))
-ResizableArray{T}(arg, dims::NTuple{N,Int}) where {T,N} =
+ResizableArray{T}(arg, dims::Dims{N}) where {T,N} =
     ResizableArray{T,N}(arg, dims)
 
 ResizableArray{T,N}(arg, dims::Integer...) where {T,N} =
@@ -260,7 +260,7 @@ Base.axes1(A::ResizableArray{<:Any,0}) = Base.OneTo(1)
 Base.axes1(A::ResizableArray) = Base.OneTo(size(A, 1))
 Base.IndexStyle(::Type{<:ResizableArray}) = IndexLinear()
 Base.parent(A::ResizableArray) = storage(A)
-Base.similar(::Type{ResizableArray{T}}, dims::NTuple{N,Int}) where {T,N} =
+Base.similar(::Type{ResizableArray{T}}, dims::Dims{N}) where {T,N} =
     ResizableArray{T,N}(undef, dims)
 
 # Make sizeof() return the number of bytes of the actual contents.
@@ -341,12 +341,11 @@ function unsafe_same_values(::IndexStyle, A, ::IndexStyle, B, n::Int)
 end
 
 Base.resize!(A::ResizableArray, dims::Integer...) = resize!(A, dims)
-function Base.resize!(A::ResizableArray{T,L},
-                      dims::NTuple{N,Integer}) where {T,L,N}
+function Base.resize!(A::ResizableArray{T,L}, dims::NTuple{N,Integer}) where {T,L,N}
     N == L || error("changing the number of dimensions is not allowed")
     return resize!(A, to_size(dims))
 end
-function Base.resize!(A::ResizableArray{T,N}, dims::NTuple{N,Int}) where {T,N}
+function Base.resize!(A::ResizableArray{T,N}, dims::Dims{N}) where {T,N}
     if dims != size(A)
         newlen = checksize(dims)
         newlen > length(storage(A)) && resize!(storage(A), newlen)
@@ -357,13 +356,12 @@ function Base.resize!(A::ResizableArray{T,N}, dims::NTuple{N,Int}) where {T,N}
 end
 
 Base.sizehint!(A::ResizableArray, dims::Integer...) = sizehint!(A, dims)
-function Base.sizehint!(A::ResizableArray{T,L},
-                        dims::NTuple{N,Integer}) where {T,L,N}
+function Base.sizehint!(A::ResizableArray{T,L}, dims::NTuple{N,Integer}) where {T,L,N}
     N == L || error("changing the number of dimensions is not allowed")
     return sizehint!(A, to_size(dims))
 end
 function Base.sizehint!(A::ResizableArray{T,N},
-                        dims::NTuple{N,Int}) where {T,N}
+                        dims::Dims{N}) where {T,N}
     len = checksize(dims)
     len > maxlength(A) && sizehint!(parent(A), len)
     return A
