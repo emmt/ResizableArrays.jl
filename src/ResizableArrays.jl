@@ -197,8 +197,7 @@ Alias for [`ResizableArray{T,1}`](@ref).
 
 """
 const ResizableVector{T,B} = ResizableArray{T,1,B}
-ResizableVector(A::AbstractArray{T}) where {T} =
-    ResizableArray{T,1}(A)
+ResizableVector(A::AbstractArray{T}) where {T} = ResizableArray{T,1}(A)
 
 """
     ResizableMatrix{T}
@@ -208,8 +207,7 @@ Alias for [`ResizableArray{T,2}`](@ref).
 
 """
 const ResizableMatrix{T,B} = ResizableArray{T,2,B}
-ResizableMatrix(A::AbstractArray{T}) where {T} =
-    ResizableArray{T,2}(A)
+ResizableMatrix(A::AbstractArray{T}) where {T} = ResizableArray{T,2}(A)
 
 """
     ResizableArrays.checksize(dims) -> len
@@ -442,13 +440,13 @@ Base.prepend!(dst::ResizableArray, src::AbstractArray) =
 @inline Base.getindex(A::ResizableArray, i::Int) = begin
     @boundscheck checkbounds(A, i);
     @inbounds r = storage(A)[i]
-    r
+    return r
 end
 
 @inline Base.setindex!(A::ResizableArray, x, i::Int) = begin
     @boundscheck checkbounds(A, i);
     @inbounds storage(A)[i] = x
-    A
+    return A
 end
 
 @inline Base.checkbounds(::Type{Bool}, A::ResizableArray, i::Int) =
