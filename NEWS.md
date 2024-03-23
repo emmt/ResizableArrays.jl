@@ -1,5 +1,10 @@
 # User visible changes in `ResizableArrays` package
 
+## Version 0.3.5
+
+- Provide `ResizableVector` and `ResizableMatrix` constructors.
+
+
 ## Version 0.3.4
 
 - Fix `ArrayTools` compatibility.
