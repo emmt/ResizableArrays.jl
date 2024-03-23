@@ -2,7 +2,6 @@ module ResizableArraysTests
 
 using Test
 using ResizableArrays
-using ResizableArrays: unsafe_same_values
 using Base: unsafe_convert, elsize
 
 # FIXME: used @generated
@@ -34,14 +33,6 @@ unsafe_copy!(dst, src, nbytes::Integer) =
         for T in (Int16, Float32, Tuple{Float64,Float64})
             @test elsize(ResizableArray{T,3,Vector{T}}) == sizeof(T)
         end
-
-        # Make sure all variants of unsafe_same_values are tested.
-        A = randn(3,4)
-        indexstyles = (IndexLinear(), IndexCartesian())
-        for indexstyle1 in indexstyles, indexstyle2 in indexstyles
-            @test unsafe_same_values(indexstyle1, A, indexstyle2, A, length(A))
-        end
-
     end
     @testset "Dimensions: $dims" for dims in ((), (3,), (2,3), (2,3,4))
         altdims = map(UInt, dims) # used later
