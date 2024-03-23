@@ -268,11 +268,27 @@ end
     end
 end
 
-@testset "Add new constructors" begin  # See https://github.com/emmt/ResizableArrays.jl/pull/3
-    @test ResizableVector(1:3) == ResizableArray(1:3)
-    @test_throws DimensionMismatch ResizableVector(rand(2, 4))
-    @test ResizableMatrix(reshape(1:9, 3, 3)) == ResizableArray(reshape(1:9, 3, 3))
-    @test_throws DimensionMismatch ResizableMatrix(1:3)
+@testset "Resizable vector/matrix constructors" begin
+    # Test ResizableVector and ResizableMatrix constructors.
+    # See https://github.com/emmt/ResizableArrays.jl/pull/3
+    V = -1:3 # some vector
+    A = @inferred ResizableVector(V)
+    M = rand(Float32, 2, 4) # some matrix
+    B = @inferred ResizableMatrix(M)
+    @test_throws DimensionMismatch ResizableVector(M)
+    @test_throws DimensionMismatch ResizableMatrix(V)
+    @test eltype(A) === eltype(V)
+    @test length(A) == length(V)
+    @test ndims(A) == ndims(V)
+    @test size(A) == size(V)
+    @test axes(A) == axes(V)
+    @test A == V
+    @test eltype(B) === eltype(M)
+    @test length(B) == length(M)
+    @test ndims(B) == ndims(M)
+    @test size(B) == size(M)
+    @test axes(B) == axes(M)
+    @test B == M
 end
 
 end # module
