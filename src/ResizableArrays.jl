@@ -139,7 +139,8 @@ ResizableArray{T,N}() where {T,N} = ResizableArray{T,N}(undef, ntuple(i -> 0, Va
     throw(DimensionMismatch("mismatching number of dimensions"))
 
 # Make a resizable copy.
-@deprecate Base.copy(::Type{T}, A::AbstractArray) where {T<:ResizableArray} T(A) false
+import Base: copy
+@deprecate copy(T::Type{<:ResizableArray}, A::AbstractArray) T(A) false
 
 # Unlike the `ResizableArray` constructor, calling the `convert` method avoids creating a
 # new instance if possible.
