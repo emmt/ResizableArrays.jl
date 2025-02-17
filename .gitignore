@@ -1,8 +1,9 @@
 *~
 *.jl.cov
 *.jl.mem
-Manifest.toml
-Manifest-v*.toml
+/Manifest.toml
+/Manifest-*.toml
+/.Manifest-*.toml
 build/
 devel/
 work/
