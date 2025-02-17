@@ -15,7 +15,7 @@ export
     shrink!
 
 using TypeUtils
-using Base: elsize, tail, throw_boundserror, @propagate_inbounds
+using Base: elsize, @propagate_inbounds
 
 """
     ResizableArray{T}(undef, dims...)
