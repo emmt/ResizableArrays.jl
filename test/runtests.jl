@@ -95,16 +95,21 @@ unsafe_copy!(dst, src, nbytes::Integer) =
             @test B == A
             @test C == B && B == C
             @test maxlength(B) == oldmaxlen
-            # Use copy to make a fresh resizable copy
-            C = copy(ResizableArray, B)
+            # Using copy to make a fresh resizable copy has been deprecated, the
+            # constructor does the same.
+            @test_deprecated C = copy(ResizableArray, B)
             @test C == B
             @test pointer(C) != pointer(B)
             @test maxlength(C) == length(C)
-            C = copy(ResizableArray{T}, B)
+            C = @inferred ResizableArray(B)
             @test C == B
             @test pointer(C) != pointer(B)
             @test maxlength(C) == length(C)
-            C = copy(ResizableArray{T,N}, B)
+            C = @inferred ResizableArray{T}(B)
+            @test C == B
+            @test pointer(C) != pointer(B)
+            @test maxlength(C) == length(C)
+            C = @inferred ResizableArray{T,N}(B)
             @test C == B
             @test pointer(C) != pointer(B)
             @test maxlength(C) == length(C)
@@ -118,9 +123,7 @@ unsafe_copy!(dst, src, nbytes::Integer) =
         @test_throws BoundsError B[length(B) + 1]
         @test_throws ErrorException resize!(B, (dims..., 5))
         @test_throws DimensionMismatch ResizableArray{T,N+1}(A)
-        @test_throws DimensionMismatch copy(ResizableArray{T,N+1}, A)
         @test_throws ErrorException ResizableArray{T,N,Vector{Char}}(A)
-        @test_throws ErrorException copy(ResizableArray{T,N,Vector{Char}}, A)
 
         # Make a copy of A using a resizable array.
         C = copyto!(similar(ResizableArray{T}, axes(A)), A)

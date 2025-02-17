@@ -40,7 +40,7 @@ augmented. Changing only the last dimension of a resizable array preserves its c
 Resizable arrays are designed to re-use storage if possible to avoid calling the garbage
 collector. This may be useful for real-time applications. As a consequence, the storage
 used by a resizable array `A` can only grow unless `shrink!(A)` is called to reduce the
-storage to the minimum. The call `copy(ResizableArray,A)` yields a copy of `A` which is a
+storage to the minimum. The call `ResizableArray(A)` yields a copy of `A` which is a
 resizable array.
 
 To improve performances, call `sizehint!(A,n)` to indicate the minimum number of elements
@@ -139,7 +139,7 @@ ResizableArray{T,N}() where {T,N} = ResizableArray{T,N}(undef, ntuple(i -> 0, Va
     throw(DimensionMismatch("mismatching number of dimensions"))
 
 # Make a resizable copy.
-Base.copy(::Type{T}, A::AbstractArray) where {T<:ResizableArray} = T(A)
+@deprecate Base.copy(::Type{T}, A::AbstractArray) where {T<:ResizableArray} T(A) false
 
 # Unlike the `ResizableArray` constructor, calling the `convert` method avoids creating a
 # new instance if possible.
@@ -265,7 +265,7 @@ end
     shrink!(A) -> A
 
 shrinks as much as possible the storage of resizable array `A` and returns `A`. Call
-`copy(ResizableArray,A)` to make a copy of `A` which is a resizable array with shrunk
+`ResizableArray(A)` to make a copy of `A` which is a resizable array with shrunk
 storage.
 
 """

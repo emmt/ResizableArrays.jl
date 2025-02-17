@@ -2,6 +2,8 @@
 
 - Replace `ArrayTools` by `TypeUtils`.
 
+- Using `copy(T::Type{<:ResizableArray}, A::AbstractArray)` to build a resizable array of
+  type `T` that does not share its storage with `A` is now deprecated, just call `T(A)`.
 
 ## Version 0.3.5
 

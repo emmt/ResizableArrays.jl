@@ -73,10 +73,10 @@ just returns its argument `A` if it is already a resizable array whose type has 
 requested signature. Otherwise, the `convert` method behaves as the `ResizableArray`
 constructor.
 
-The call `copy(ResizableArray,A)` yields a copy of `A` which is a resizable
-array of same element type as `A`. Call `copy(ResizableArray{T},A)` to specify
-a possibly different element type `T`. The number of dimensions `N` may also be
-specified but it must be the same as `A`: `copy(ResizableArray{T,N},A)`.
+The call `ResizableArray(A)` yields a copy of `A` which is a resizable array of same
+element type as `A`. Call `ResizableArray{T}(A)` to specify a possibly different element
+type `T`. The number of dimensions `N` may also be specified but it must be the same as
+`A`: `ResizableArray{T,N}(A)`.
 
 
 ## Resizing dimensions
