@@ -14,7 +14,7 @@ export
     grow!,
     shrink!
 
-using ArrayTools
+using TypeUtils
 using Base: elsize, tail, throw_boundserror, @propagate_inbounds
 
 """
@@ -272,7 +272,7 @@ Base.sizeof(A::ResizableArray) = elsize(A)*length(A)
 Base.resize!(A::ResizableArray, dims::Integer...) = resize!(A, dims)
 function Base.resize!(A::ResizableArray{T,L}, dims::NTuple{N,Integer}) where {T,L,N}
     N == L || error("changing the number of dimensions is not allowed")
-    return resize!(A, to_size(dims))
+    return resize!(A, as_array_size(dims))
 end
 function Base.resize!(A::ResizableArray{T,N}, dims::Dims{N}) where {T,N}
     if dims != size(A)
@@ -287,7 +287,7 @@ end
 Base.sizehint!(A::ResizableArray, dims::Integer...) = sizehint!(A, dims)
 function Base.sizehint!(A::ResizableArray{T,L}, dims::NTuple{N,Integer}) where {T,L,N}
     N == L || error("changing the number of dimensions is not allowed")
-    return sizehint!(A, to_size(dims))
+    return sizehint!(A, as_array_size(dims))
 end
 function Base.sizehint!(A::ResizableArray{T,N},
                         dims::Dims{N}) where {T,N}
