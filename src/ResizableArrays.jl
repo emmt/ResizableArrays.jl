@@ -258,7 +258,7 @@ Base.elsize(::Type{ResizableArray{T,N,B}}) where {T,N,B} = elsize(B)
 Base.sizeof(A::ResizableArray) = elsize(A)*length(A)
 
 # Make ResizableArray's efficient iterators.
-@inline Base.iterate(A::ResizableArray, i=1) =
+@inline Base.iterate(A::ResizableArray, i::Int = 1) =
     ((i % UInt) - 1 < length(A) ? (@inbounds A[i], i + 1) : nothing)
 
 Base.resize!(A::ResizableArray, dims::Integer...) = resize!(A, dims)
