@@ -190,7 +190,7 @@ is the supertype of one-dimensional resizable arrays with elements of type `T`. 
 
 """
 const ResizableVector{T,B} = ResizableArray{T,1,B}
-ResizableVector(A::AbstractArray{T}) where {T} = ResizableArray{T,1}(A)
+ResizableVector(A::AbstractArray{T}) where {T} = ResizableVector{T}(A)
 
 """
     ResizableMatrix{T}
@@ -200,7 +200,7 @@ is the supertype of two-dimensional resizable arrays with elements of type `T`. 
 
 """
 const ResizableMatrix{T,B} = ResizableArray{T,2,B}
-ResizableMatrix(A::AbstractArray{T}) where {T} = ResizableArray{T,2}(A)
+ResizableMatrix(A::AbstractArray{T}) where {T} = ResizableMatrix{T}(A)
 
 """
     ResizableArrays.checksize(dims) -> len
@@ -359,13 +359,13 @@ Base.prepend!(dst::ResizableArray, src::AbstractArray) =
     grow!(dst, src, true)
 
 @inline Base.getindex(A::ResizableArray, i::Int) = begin
-    @boundscheck checkbounds(A, i);
+    @boundscheck checkbounds(A, i)
     @inbounds r = storage(A)[i]
     return r
 end
 
 @inline Base.setindex!(A::ResizableArray, x, i::Int) = begin
-    @boundscheck checkbounds(A, i);
+    @boundscheck checkbounds(A, i)
     @inbounds storage(A)[i] = x
     return A
 end
