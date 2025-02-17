@@ -102,7 +102,7 @@ mutable struct ResizableArray{T,N,B} <: DenseArray{T,N}
     function ResizableArray{T,N}(::UndefInitializer, dims::Dims{N}) where {T,N}
         len = checksize(dims)
         buf = Vector{T}(undef, len)
-        return new{T,N,Vector{T}}(len, dims, buf)
+        return new{T,N,typeof(buf)}(len, dims, buf)
     end
 
 end
@@ -114,58 +114,31 @@ Base.size(A::ResizableArray) = getfield(A, :dims)
 
 # Calling the `ResizableArray` constructor always creates a new instance.
 
-ResizableArray(arg, dims::Integer...) =
-    ResizableArray(arg, dims)
-ResizableArray(arg, dims::Tuple{Vararg{Integer}}) =
-    ResizableArray(arg, map(Int, dims))
-ResizableArray(buf::B, dims::Dims{N}) where {N,B} =
-    ResizableArray{eltype(B),N}(buf, dims)
+ResizableArray(buf, dims::Integer...) = ResizableArray(buf, dims)
+ResizableArray(buf, dims::NTuple{N,Integer}) where {N} = ResizableArray{eltype(buf),N}(buf, dims)
 
-ResizableArray{T}(arg, dims::Integer...) where {T} =
-    ResizableArray{T}(arg, dims)
-ResizableArray{T}(arg, dims::Tuple{Vararg{Integer}}) where {T} =
-    ResizableArray{T}(arg, map(Int, dims))
-ResizableArray{T}(arg, dims::Dims{N}) where {T,N} =
-    ResizableArray{T,N}(arg, dims)
+ResizableArray{T}(buf, dims::Integer...) where {T} = ResizableArray{T}(buf, dims)
+ResizableArray{T}(buf, dims::NTuple{N,Integer}) where {T,N} = ResizableArray{T,N}(buf, dims)
 
-ResizableArray{T,N}(arg, dims::Integer...) where {T,N} =
-    ResizableArray{T,N}(arg, dims)
-function ResizableArray{T,N}(arg, dims::Tuple{Vararg{Integer}}) where {T,N}
-    length(dims) == N || throw_mismatching_number_of_dimensions()
-    return ResizableArray{T,N}(arg, map(Int, dims))
-end
+ResizableArray{T,N}(buf, dims::Integer...) where {T,N} = ResizableArray{T,N}(buf, dims)
+ResizableArray{T,N}(buf, dims::NTuple{N,Integer}) where {T,N} = ResizableArray{T,N}(buf, map(Int, dims))
+ResizableArray{T,N}(buf, dims::Dims{M}) where {T,N,M} = throw_mismatching_number_of_dimensions()
 
+ResizableArray(A::AbstractArray) = ResizableArray{eltype(A)}(A)
+ResizableArray{T}(A::AbstractArray) where {T} = copyto!(ResizableArray{T}(undef, size(A)), A)
+ResizableArray{T,N}(A::AbstractArray{<:Any,N}) where {T,N} = ResizableArray{T}(A)
+ResizableArray{T,N}(A::AbstractArray{<:Any,M}) where {T,N,M} = throw_mismatching_number_of_dimensions()
 ResizableArray{T,N,B}(A::AbstractArray) where {T,N,B} =
-    (Vector{T} <: B ? ResizableArray{T,N}(A) :
-     throw_invalid_buffer_type(B,T))
-ResizableArray{T,N}(A::AbstractArray{<:Any,M}) where {T,N,M} =
-    (M == N ? copyto!(ResizableArray{T,N}(undef, size(A)), A) :
-     throw_mismatching_number_of_dimensions())
-ResizableArray{T}(A::AbstractArray) where {T} =
-    copyto!(ResizableArray{T}(undef, size(A)), A)
-ResizableArray(A::AbstractArray{T}) where {T} =
-    copyto!(ResizableArray{T}(undef, size(A)), A)
+    Vector{T} <: B ? ResizableArray{T,N}(A) : throw(ErrorException("invalid buffer type $B (must be ≥ Vector{$T})"))
 
 # Constructor for, initially empty, workspace of given rank and element type.
-ResizableArray{T,N}() where {T,N} =
-    ResizableArray{T,N}(undef, ntuple(i -> 0, Val(N)))
+ResizableArray{T,N}() where {T,N} = ResizableArray{T,N}(undef, ntuple(i -> 0, Val(N)))
 
 @noinline throw_mismatching_number_of_dimensions() =
     throw(DimensionMismatch("mismatching number of dimensions"))
 
-# TypeError is more appropriate but we want a specific error message.
-@noinline throw_invalid_buffer_type(::Type{B},::Type{T}) where {B,T} =
-    throw(ErrorException("invalid buffer type $B (must be ≥ Vector{$T})"))
-
 # Make a resizable copy.
-Base.copy(::Type{ResizableArray}, A::AbstractArray) =
-    ResizableArray(A)
-Base.copy(::Type{ResizableArray{T}}, A::AbstractArray) where {T} =
-    ResizableArray{T}(A)
-Base.copy(::Type{ResizableArray{T,N}}, A::AbstractArray) where {T,N} =
-    ResizableArray{T,N}(A)
-Base.copy(::Type{ResizableArray{T,N,B}}, A::AbstractArray) where {T,N,B} =
-    ResizableArray{T,N,B}(A)
+Base.copy(::Type{T}, A::AbstractArray) where {T<:ResizableArray} = T(A)
 
 # Unlike the `ResizableArray` constructor, calling the `convert` method avoids
 # creating a new instance if possible.
@@ -173,14 +146,7 @@ Base.convert(::Type{ResizableArray{T,N,B}}, A::ResizableArray{T,N,C}) where {T,N
 Base.convert(::Type{ResizableArray{T,N}}, A::ResizableArray{T,N}) where {T,N} = A
 Base.convert(::Type{ResizableArray{T}}, A::ResizableArray{T}) where {T} = A
 Base.convert(::Type{ResizableArray}, A::ResizableArray) = A
-Base.convert(::Type{ResizableArray{T,N,B}}, A::AbstractArray) where {T,N,B} =
-    ResizableArray{T,N,B}(A)
-Base.convert(::Type{ResizableArray{T,N}}, A::AbstractArray) where {T,N} =
-    ResizableArray{T,N}(A)
-Base.convert(::Type{ResizableArray{T}}, A::AbstractArray) where {T} =
-    ResizableArray{T}(A)
-Base.convert(::Type{ResizableArray}, A::AbstractArray) =
-    ResizableArray(A)
+Base.convert(::Type{T}, A::AbstractArray) where {T<:ResizableArray} = T(A)
 
 """
     ResizableVector{T}
