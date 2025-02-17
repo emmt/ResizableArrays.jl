@@ -83,7 +83,8 @@ augmented; otherwise the maximum number of elements of `A` is `length(buf)`.
     might assume a wrong buffer size. To avoid this, the best is to make sure that only
     `A` owns `buf` and only `A` manages its size. In the current implementation, the size
     of the internal buffer is never automatically reduced so the same buffer may be
-    safely shared by different resizable arrays.
+    safely shared by different resizable arrays provided [`shrink!`](@ref) is never
+    called on these arrays.
 
 """
 mutable struct ResizableArray{T,N,B} <: DenseArray{T,N}
@@ -140,8 +141,8 @@ ResizableArray{T,N}() where {T,N} = ResizableArray{T,N}(undef, ntuple(i -> 0, Va
 # Make a resizable copy.
 Base.copy(::Type{T}, A::AbstractArray) where {T<:ResizableArray} = T(A)
 
-# Unlike the `ResizableArray` constructor, calling the `convert` method avoids
-# creating a new instance if possible.
+# Unlike the `ResizableArray` constructor, calling the `convert` method avoids creating a
+# new instance if possible.
 Base.convert(::Type{ResizableArray{T,N,B}}, A::ResizableArray{T,N,C}) where {T,N,B,C<:B} = A
 Base.convert(::Type{ResizableArray{T,N}}, A::ResizableArray{T,N}) where {T,N} = A
 Base.convert(::Type{ResizableArray{T}}, A::ResizableArray{T}) where {T} = A
@@ -199,8 +200,8 @@ isgrowable(::Any) = false
 """
     maxlength(A)
 
-yields the maximum number of elements which can be stored in resizable array
-`A` without resizing its internal buffer.
+yields the maximum number of elements which can be stored in resizable array `A` without
+resizing its internal buffer.
 
 See also: [`ResizableArray`](@ref).
 
@@ -384,9 +385,8 @@ end
      soff > 0 && soff - 1 + n ≤ slen) || throw(BoundsError())
 end
 
-# It is sufficient to extend `unsafe_convert` method with the following
-# signature to get a qualified pointer to the base address of the storage
-# buffer.
+# It is sufficient to extend `unsafe_convert` method with the following signature to get
+# a qualified pointer to the base address of the storage buffer.
 Base.unsafe_convert(::Type{Ptr{T}}, A::ResizableArray{T}) where {T} =
     Base.unsafe_convert(Ptr{T}, storage(A))
 
