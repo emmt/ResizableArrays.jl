@@ -91,18 +91,15 @@ mutable struct ResizableArray{T,N,B} <: DenseArray{T,N}
     dims::Dims{N}
     vals::B
     # Inner constructor for provided storage buffer.
-    function ResizableArray{T,N}(buf::B,
-                                 dims::Dims{N}) where {T,N,B}
-        eltype(B) === T || error("buffer has a different element type")
-        IndexStyle(B) === IndexLinear() ||
-            error("buffer must have linear indexing style")
+    function ResizableArray{T,N}(buf::B, dims::Dims{N}) where {T,N,B}
+        eltype(B) === T || throw(ArgumentError("storage buffer has a different element type"))
+        IndexStyle(B) === IndexLinear() || throw(ArgumentError("storage buffer must have linear indexing style"))
         len = checksize(dims)
-        length(buf) ≥ len || error("buffer is too small")
+        length(buf) ≥ len || throw(DimensionMismatch("storage buffer is too small"))
         return new{T,N,B}(len, dims, buf)
     end
     # Inner constructor using regular Julia's vector to store elements.
-    function ResizableArray{T,N}(::UndefInitializer,
-                                 dims::Dims{N}) where {T,N}
+    function ResizableArray{T,N}(::UndefInitializer, dims::Dims{N}) where {T,N}
         len = checksize(dims)
         buf = Vector{T}(undef, len)
         return new{T,N,Vector{T}}(len, dims, buf)
@@ -212,14 +209,13 @@ yields the number of elements of an array of size `dims` throwing an error if an
 dimension is invalid.
 
 """
-function checksize(dims::Dims)
+function checksize(dims::Dims{N}) where {N}
     len = 1
-    ok = true
-    @inbounds for dim in dims
-        ok &= (dim ≥ 0)
+    @inbounds for i in 1:N
+        dim = dims[i]
+        dim ≥ 0 || throw(ArgumentError("dimensions must be ≥ 0, got `dims[$i] = $dim`"))
         len *= dim
     end
-    ok || error("invalid dimension(s)")
     return len
 end
 
@@ -293,7 +289,7 @@ function Base.sizehint!(A::ResizableArray{T,N},
 end
 Base.sizehint!(A::ResizableArray, len::Integer) = sizehint!(A, Int(len))
 function Base.sizehint!(A::ResizableArray, len::Int)
-    len ≥ 0 || throw(ArgumentError("number of elements must be nonnegative"))
+    len ≥ 0 || throw(ArgumentError("number of elements must be ≥ 0, got $len"))
     len > maxlength(A) && sizehint!(parent(A), len)
     return A
 end
