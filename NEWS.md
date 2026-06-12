@@ -1,6 +1,6 @@
 # User visible changes in `ResizableArrays` package
 
-## Unreleased
+## Version 0.3.7 (2026-06-13)
 
 ### Fixed
 
