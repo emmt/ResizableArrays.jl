@@ -1,5 +1,12 @@
 # User visible changes in `ResizableArrays` package
 
+## Version 0.3.7 (2026-06-13)
+
+### Fixed
+
+- Compatibility with `TypeUtils` 1 and 2
+
+
 ## Version 0.3.6
 
 - Replace `ArrayTools` by `TypeUtils`.

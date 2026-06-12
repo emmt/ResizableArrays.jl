@@ -123,6 +123,7 @@ unsafe_copy!(dst, src, nbytes::Integer) =
         @test_throws BoundsError B[length(B) + 1]
         @test_throws ErrorException resize!(B, (dims..., 5))
         @test_throws DimensionMismatch ResizableArray{T,N+1}(A)
+        @test_throws DimensionMismatch ResizableArray{T,N+1}(parent(B), size(B))
         @test_throws ErrorException ResizableArray{T,N,Vector{Char}}(A)
 
         # Make a copy of A using a resizable array.
